@@ -101,7 +101,9 @@ const LOGIC_ENGINE = {
     description: "Great deals, quick getaways",
     allowedLines: ["Carnival Cruise Line", "MSC Cruises", "Costa Cruises"]
   }
-  // --- MOCK DATA ---
+};
+
+// --- MOCK DATA ---
 const CRUISE_DATA = [
   {
     id: 1,
@@ -243,6 +245,10 @@ const App = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [filteredCruises, setFilteredCruises] = useState([]);
   const [selectedCruise, setSelectedCruise] = useState(null);
+  
+  // NEW: State for real data
+  const [cruiseData, setCruiseData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Safe Mode Storage
   useEffect(() => {
@@ -258,16 +264,79 @@ const App = () => {
     } catch (e) {}
   }, [cart]);
 
-  // Logic Engine
+  // --- 1. FETCH DATA FROM WORDPRESS ---
   useEffect(() => {
-    let results = CRUISE_DATA;
-    if (filters.destination) results = results.filter(c => c.destination === filters.destination);
-    if (filters.style) {
-      const selectedLogic = LOGIC_ENGINE[filters.style];
-      if (selectedLogic) results = results.filter(c => selectedLogic.allowedLines.includes(c.line));
+    // Replace this with YOUR actual WordPress URL
+    const WP_API_URL = "https://YOUR-WEBSITE.com/wp-json/wp/v2/cruises?per_page=100&_fields=id,title,acf";
+
+    const fetchCruises = async () => {
+      try {
+        const response = await fetch(WP_API_URL);
+        const wpData = await response.json();
+
+        // Map WordPress Data to App Structure
+        const formattedData = wpData.map(post => {
+          const acf = post.acf;
+          
+          // Helper to parse the JSON text areas safely
+          const parseJSON = (jsonString) => {
+            try { return jsonString ? JSON.parse(jsonString) : []; } 
+            catch (e) { return []; }
+          };
+
+          // Helper to turn newlines into arrays
+          const parseList = (text) => text ? text.split('\n') : [];
+
+          return {
+            id: post.id,
+            title: post.title.rendered,
+            line: acf.cruise_line,
+            ship: acf.ship_name,
+            destination: acf.destination, // Matches 'Caribbean', etc.
+            travelStyle: acf.travel_style, 
+            date: "Check Dates", 
+            price: acf.price,
+            image: acf.cruise_image, 
+            rating: acf.rating,
+            affiliateLink: acf.affiliate_link,
+            description: acf.description,
+            ports: parseList(acf.ports),
+            features: parseList(acf.features),
+            amazonProducts: parseJSON(acf.amazon_json),
+            excursions: parseJSON(acf.excursions_json)
+          };
+        });
+
+        setCruiseData(formattedData);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching cruises:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchCruises();
+  }, []);
+
+  // --- LOGIC ENGINE ---
+  useEffect(() => {
+    // Wait for data to load
+    if (loading) return;
+
+    let results = cruiseData;
+
+    // 1. Destination Filter
+    if (filters.destination) {
+      results = results.filter(c => c.destination === filters.destination);
     }
+    
+    // 2. Style Filter
+    if (filters.style) {
+      results = results.filter(c => c.travelStyle === filters.style);
+    }
+
     setFilteredCruises(results);
-  }, [filters]);
+  }, [filters, cruiseData, loading]);
 
   const addToCart = (item, type, parentContext = '') => {
     const itemId = item.id || `${type}-${item.name}-${Date.now()}`;
@@ -311,6 +380,7 @@ const App = () => {
 
     window.location.href = `mailto:?subject=${subject}&body=${encodeURIComponent(bodyText)}`;
   };
+
   // --- SUB-COMPONENTS ---
 
   const CruiseDetailsModal = () => {
@@ -452,6 +522,7 @@ const App = () => {
       </div>
     </div>
   );
+
   const Header = () => (
     <header className="no-print sticky top-0 z-50 bg-white shadow-sm border-b border-gray-100">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -649,6 +720,7 @@ const App = () => {
                                   {item.checked && <Check size={12} strokeWidth={4} />}
                                 </div>
                               </label>
+                              {/* UPDATED: Thumbnail Image */}
                               <img src={item.image} className="w-12 h-12 rounded-md object-cover flex-shrink-0 bg-gray-100" />
                               <div className="flex-1">
                                 <div className={`font-bold text-sm leading-tight transition-all ${item.checked ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
@@ -720,4 +792,3 @@ const App = () => {
 };
 
 export default App;
-};
