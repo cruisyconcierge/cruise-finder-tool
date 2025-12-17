@@ -1,547 +1,723 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Luggage, Sun, Shirt, ShoppingBag, Trash2, CheckSquare, 
-  Square, Anchor, Camera, X, Plus, ArrowRight, Compass, Watch, Smartphone,
-  Umbrella, Plane, Mountain, Snowflake, Building, Type,
-  Maximize2, Mail, ArrowLeft, Instagram, Pin, Shuffle, Facebook, Map as MapIcon
+  Anchor, 
+  MapPin, 
+  Users, 
+  Heart, 
+  X, 
+  ChevronRight, 
+  ChevronLeft, 
+  Ship,
+  Sun,
+  DollarSign,
+  Star,
+  Check,
+  Printer,
+  Mail,
+  Info,
+  Wine,
+  Calendar,
+  Navigation,
+  ShoppingBag,
+  Ticket,
+  PlusCircle
 } from 'lucide-react';
 
-// --- AFFILIATE CONFIGURATION ---
-const AMAZON_TAG = 'cruisytravel-20'; 
-const BRAND_LOGO = "https://cruisytravel.com/wp-content/uploads/2024/01/cropped-20240120_025955_0000.png";
-
-// --- SAFETY HELPERS ---
-const safeLocalStorage = {
-  getItem: (key, fallback) => {
-    try {
-      const item = localStorage.getItem(key);
-      const parsed = item ? JSON.parse(item) : fallback;
-      return parsed !== null && parsed !== undefined ? parsed : fallback;
-    } catch (e) { return fallback; }
-  },
-  setItem: (key, value) => {
-    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
-  }
-};
-
-// --- CONFIGURATION ---
-const THEMES = {
-  'Cruise': {
-    bg: 'bg-blue-50',
-    text: 'text-teal-900',
-    border: 'border-[12px] border-teal-200 border-double',
-    decoration: (
-      <>
-        <div className="absolute top-4 right-4 text-teal-800/10 pointer-events-none"><Anchor size={140} /></div>
-        <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-teal-100/40 to-transparent pointer-events-none"></div>
-      </>
-    ),
-    vibes: 'Tropical Beach'
-  },
-  'Tropical': {
-    bg: 'bg-orange-50',
-    text: 'text-orange-900',
-    border: 'border-[16px] border-orange-200 border-dashed',
-    decoration: (
-      <>
-        <div className="absolute -top-10 -right-10 text-yellow-400/20 pointer-events-none"><Sun size={240} /></div>
-        <div className="absolute bottom-4 right-4 text-orange-400/20 pointer-events-none"><Umbrella size={100} /></div>
-      </>
-    ),
-    vibes: 'Tropical Beach'
-  },
-  'Ski Trip': {
-    bg: 'bg-slate-50',
-    text: 'text-slate-800',
-    border: 'border-[10px] border-blue-100 rounded-none',
-    decoration: (
-      <>
-        <div className="absolute top-4 left-4 text-blue-200/50 pointer-events-none"><Snowflake size={80} /></div>
-        <div className="absolute bottom-8 right-8 text-blue-300/30 pointer-events-none"><Snowflake size={120} /></div>
-      </>
-    ),
-    vibes: 'Cold Adventure'
-  },
-  'City Break': {
-    bg: 'bg-zinc-100',
-    text: 'text-zinc-900',
-    border: 'border-[8px] border-zinc-800',
-    decoration: (
-      <>
-        <div className="absolute bottom-0 w-full h-40 opacity-10 pointer-events-none bg-gradient-to-t from-zinc-500 to-transparent"></div>
-        <div className="absolute top-4 right-4 text-zinc-300 pointer-events-none"><Building size={100} /></div>
-      </>
-    ),
-    vibes: 'City Exploring'
-  },
-  'Desert': {
-    bg: 'bg-amber-50',
-    text: 'text-amber-900',
-    border: 'border-[10px] border-amber-300 border-dotted',
-    decoration: (
-      <>
-        <div className="absolute top-0 left-0 w-full h-full opacity-5 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-amber-200 to-transparent pointer-events-none"></div>
-        <div className="absolute bottom-4 left-4 text-amber-300/40 pointer-events-none"><Sun size={80} /></div>
-      </>
-    ),
-    vibes: 'Airport Comfort'
-  }
-};
-
-const STICKERS = [
-  { id: 's1', content: '✈️', type: 'emoji' },
-  { id: 's2', content: '🌴', type: 'emoji' },
-  { id: 's4', content: '📸', type: 'emoji' },
-  { id: 's5', content: '👙', type: 'emoji' },
-  { id: 's6', content: '🕶️', type: 'emoji' },
-  { id: 's9', content: '🛳️', type: 'emoji' },
-  { id: 's10', content: '⚓', type: 'emoji' },
-  { id: 'h1', content: '🎄', type: 'emoji' },
-  { id: 'h2', content: '🎅', type: 'emoji' },
-  { id: 'h3', content: '🦃', type: 'emoji' },
-  { id: 'h4', content: '🎃', type: 'emoji' },
-  { id: 'h5', content: '🎆', type: 'emoji' },
-  { id: 't1', content: 'Passport Ready', type: 'text' },
-  { id: 't2', content: 'Vacay Mode', type: 'text' },
-  { id: 't3', content: 'Out of Office', type: 'text' },
-];
-
-const SCENIC_PHOTOS = [
-  { id: 'p1', url: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=400&q=80', name: 'Swiss Alps' },
-  { id: 'p2', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=80', name: 'Tropical Beach' },
-  { id: 'p3', url: 'https://images.unsplash.com/photo-1499856871940-a09627c6dcf6?w=400&q=80', name: 'Map & Camera' },
-  { id: 'p4', url: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&q=80', name: 'Blue Lake' },
-  { id: 'p5', url: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=400&q=80', name: 'Desert Road' },
-  { id: 'p6', url: 'https://images.unsplash.com/photo-1504198458649-3128b932f49e?w=400&q=80', name: 'Cozy Cabin' },
-  { id: 'p7', url: 'https://images.unsplash.com/photo-1512951670161-b3c66e49872d?w=400&q=80', name: 'Poolside' },
-  { id: 'p8', url: 'https://images.unsplash.com/photo-1473186578172-c141e6798cf4?w=400&q=80', name: 'Beach Walk' },
-];
-
-const TRAVEL_VIBES = {
-  'Airport Comfort': [
-    { id: 'v_air_1', name: 'Travel Hoodie', price: 45.00, img: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=300&q=80' },
-    { id: 'v_air_2', name: 'Compression Socks', price: 18.00, img: 'https://images.unsplash.com/photo-1582966772652-13b355bb9797?w=300&q=80' },
-    { id: 'v_air_3', name: 'Slip-on Sneakers', price: 60.00, img: 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=300&q=80' },
-    { id: 'v_air_4', name: 'Neck Pillow', price: 25.00, img: 'https://plus.unsplash.com/premium_photo-1675807914389-72c67dc39d42?w=300&q=80' },
-  ],
-  'Tropical Beach': [
-    { id: 'v_beach_1', name: 'Linen Cover-up', price: 35.00, img: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=300&q=80' },
-    { id: 'v_beach_2', name: 'Quick-Dry Swimwear', price: 28.00, img: 'https://images.unsplash.com/photo-1566807810030-31cb3b27ea17?w=300&q=80' },
-    { id: 'v_beach_3', name: 'Waterproof Sandals', price: 30.00, img: 'https://images.unsplash.com/photo-1603487742131-4160d6986ba2?w=300&q=80' },
-    { id: 'v_beach_4', name: 'Polarized Shades', price: 15.99, img: 'https://images.unsplash.com/photo-1577803645773-f96470509666?w=300&q=80' },
-  ],
-  'City Exploring': [
-    { id: 'v_city_1', name: 'Anti-Theft Bag', price: 40.00, img: 'https://images.unsplash.com/photo-1590874103328-3607bac568a5?w=300&q=80' },
-    { id: 'v_city_2', name: 'Walking Shoes', price: 85.00, img: 'https://images.unsplash.com/photo-1512374382149-233c42b6a83b?w=300&q=80' },
-    { id: 'v_city_3', name: 'Rain Jacket', price: 55.00, img: 'https://images.unsplash.com/photo-1545593169-3d23b207eb87?w=300&q=80' },
-    { id: 'v_city_4', name: 'Power Bank', price: 29.99, img: 'https://images.unsplash.com/photo-1609592424367-172579dfd97d?w=300&q=80' },
-  ],
-  'Cold Adventure': [
-    { id: 'v_cold_1', name: 'Thermal Layer', price: 40.00, img: 'https://images.unsplash.com/photo-1578589318274-0498eb107e36?w=300&q=80' },
-    { id: 'v_cold_2', name: 'Wool Beanie', price: 22.00, img: 'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?w=300&q=80' },
-    { id: 'v_cold_3', name: 'Puffer Jacket', price: 90.00, img: 'https://images.unsplash.com/photo-1544923246-77307dd654cb?w=300&q=80' },
-  ]
-};
-
-const ESSENTIALS_DATA = [
-  { id: 'e1', name: 'Univ. Adapter', price: 19.99, img: 'https://images.unsplash.com/photo-1590248232938-1630b427b34e?w=300&q=80' },
-  { id: 'e2', name: 'Power Bank', price: 29.99, img: 'https://images.unsplash.com/photo-1625723044792-44de16ccb4e9?w=300&q=80' },
-  { id: 'e3', name: 'Packing Cubes', price: 24.99, img: 'https://images.unsplash.com/photo-1565538420183-f39c27937397?w=300&q=80' },
-  { id: 'e4', name: 'Waterproof Pouch', price: 9.99, img: 'https://images.unsplash.com/photo-1623998021450-85c29c644e0d?w=300&q=80' },
-  { id: 'e6', name: 'Sunscreen', price: 14.50, img: 'https://images.unsplash.com/photo-1526947425960-945c6e72858f?w=300&q=80' },
-  { id: 'e7', name: 'First Aid Kit', price: 15.00, img: 'https://images.unsplash.com/photo-1632613713312-0440375dc113?w=300&q=80' },
-];
-
-// --- COMPONENTS ---
-
-const Header = ({ view, setView, myBagCount }) => (
-  <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-100 transition-all">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex justify-between items-center h-20">
-        
-        <div className="flex items-center cursor-pointer group" onClick={() => setView('home')}>
-          <img src={BRAND_LOGO} alt="Cruisy Travel" className="h-10 w-auto mr-2" />
-          <span className="sr-only">Cruisy Travel Trip Kit</span>
-        </div>
-        
-        <div className="flex items-center space-x-2 md:space-x-4">
-          <button onClick={() => setView('planner')} className={`hidden md:flex px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${view === 'planner' ? 'bg-gray-100 text-brand' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>Essentials</button>
-          <button onClick={() => setView('styleboard')} className={`hidden md:flex px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${view === 'styleboard' ? 'bg-gray-100 text-brand' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>Style Board</button>
-          <button onClick={() => setView('mybag')} className="flex items-center bg-gray-900 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-teal-600 transition-all hover:-translate-y-0.5 active:scale-95">
-            <ShoppingBag size={18} className="mr-2" />
-            <span className="hidden sm:inline">Kit</span>
-            {myBagCount > 0 && <span className="ml-2 bg-white text-gray-900 text-xs py-0.5 px-2 rounded-md font-extrabold">{myBagCount}</span>}
-          </button>
-        </div>
-      </div>
-    </div>
-  </nav>
-);
-
-const Hero = ({ setView }) => (
-  <div className="relative overflow-hidden bg-white pt-24 pb-12">
-    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-50 rounded-full blur-3xl opacity-50 -translate-y-1/2 translate-x-1/4"></div>
-    <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-orange-50 rounded-full blur-3xl opacity-50 translate-y-1/4 -translate-x-1/4"></div>
-
-    <div className="relative z-10 max-w-5xl mx-auto text-center px-4">
-      <div className="inline-flex items-center bg-white border border-gray-100 rounded-full px-5 py-2 mb-8 shadow-sm">
-         <Plane size={14} className="text-teal-600 mr-2" />
-         <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Universal Packing Tool</span>
-      </div>
+// --- FONTS & STYLES ---
+const GlobalStyles = () => (
+  <style>
+    {`
+      @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Russo+One&display=swap');
       
-      <h1 className="text-6xl md:text-8xl font-header text-gray-900 mb-8 leading-tight tracking-tight">
-        Style Your <br/>
-        <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-cyan-400">Next Getaway.</span>
-      </h1>
-      
-      <p className="text-xl text-gray-500 font-light max-w-2xl mx-auto mb-12 leading-relaxed">
-        Don't just pack—curate. Build a visual style board of outfits, essentials, and travel gear for your upcoming voyage.
-      </p>
-      
-      <div className="flex flex-col sm:flex-row justify-center gap-4 mb-20">
-        <button onClick={() => setView('styleboard')} className="flex items-center justify-center px-10 py-5 bg-teal-600 text-white rounded-2xl font-bold text-lg shadow-xl shadow-teal-200 hover:bg-teal-700 hover:scale-105 transition-all">
-          <Camera className="mr-2" /> Create Board
-        </button>
-        <button onClick={() => setView('planner')} className="flex items-center justify-center px-10 py-5 bg-white text-gray-700 border-2 border-gray-100 rounded-2xl font-bold text-lg hover:border-gray-300 hover:bg-gray-50 transition-all">
-          <CheckSquare className="mr-2" /> View Essentials
-        </button>
-      </div>
+      .font-brand { font-family: 'Russo One', sans-serif; }
+      .font-body { font-family: 'Roboto', sans-serif; }
 
-      <div className="border-t border-gray-100 pt-12">
-        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-8">Inspiration Boards</p>
-        <div className="flex justify-center gap-6 overflow-hidden opacity-80 hover:opacity-100 transition-opacity">
-           <div className="w-48 h-64 bg-orange-50 rounded-xl border-4 border-orange-100 p-4 transform -rotate-3 hover:rotate-0 transition-transform duration-500 shadow-md">
-              <div className="h-full w-full bg-[url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=300')] bg-cover rounded-lg opacity-80"></div>
-           </div>
-           <div className="w-48 h-64 bg-blue-50 rounded-xl border-4 border-blue-100 p-4 transform rotate-2 hover:rotate-0 transition-transform duration-500 shadow-md z-10">
-              <div className="h-full w-full bg-[url('https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=300')] bg-cover rounded-lg opacity-80"></div>
-           </div>
-           <div className="w-48 h-64 bg-gray-100 rounded-xl border-4 border-gray-200 p-4 transform -rotate-1 hover:rotate-0 transition-transform duration-500 shadow-md">
-              <div className="h-full w-full bg-[url('https://images.unsplash.com/photo-1499856871940-a09627c6dcf6?auto=format&fit=crop&w=300')] bg-cover rounded-lg opacity-80"></div>
-           </div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
-const StyleBoard = ({ addToBag, setView }) => {
-  // SAFETY CHECK: Keys updated to _v7 to force fresh start
-  const [currentTheme, setCurrentTheme] = useState(() => safeLocalStorage.getItem('cruisyTheme_v7', 'Cruise'));
-  const [boardItems, setBoardItems] = useState(() => safeLocalStorage.getItem('cruisyBoardItems_v7', []));
-  const [activeTab, setActiveTab] = useState('Vibes');
-  
-  useEffect(() => {
-    safeLocalStorage.setItem('cruisyTheme_v7', currentTheme);
-    safeLocalStorage.setItem('cruisyBoardItems_v7', boardItems);
-  }, [currentTheme, boardItems]);
-
-  const theme = THEMES[currentTheme] || THEMES['Cruise'];
-  const vibeItems = TRAVEL_VIBES[theme.vibes] || TRAVEL_VIBES['Airport Comfort'];
-  
-  // Ensure boardItems is always an array
-  const validBoardItems = Array.isArray(boardItems) ? boardItems : [];
-
-  const addToBoard = (item, type = 'product') => {
-    const randomRotation = Math.floor(Math.random() * 6) - 3; 
-    const initialSize = type === 'sticker' ? 'large' : 'small'; 
-    const newItem = { 
-      ...item, 
-      boardId: Date.now() + Math.random(), 
-      type, 
-      size: initialSize,
-      rotation: randomRotation 
-    };
-    setBoardItems([...validBoardItems, newItem]);
-    if (type === 'product') addToBag(item);
-  };
-
-  const removeFromBoard = (boardId) => setBoardItems(validBoardItems.filter(i => i.boardId !== boardId));
-
-  const toggleSize = (boardId) => {
-    setBoardItems(validBoardItems.map(item => {
-      // Prevents resizing for stickers
-      if (item.boardId === boardId && item.type !== 'sticker') {
-        const nextSize = item.size === 'small' ? 'medium' : item.size === 'medium' ? 'large' : 'small';
-        return { ...item, size: nextSize };
+      @media print {
+        @page { margin: 1cm; size: portrait; }
+        body { background-color: white; -webkit-print-color-adjust: exact; }
+        .no-print { display: none !important; }
+        .print-only { display: block !important; }
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       }
-      return item;
-    }));
-  };
+      .print-only { display: none; }
+      
+      /* Checkbox styles - Updated to use Brand Teal */
+      .custom-checkbox:checked + div {
+         background-color: #34a4b8;
+         border-color: #34a4b8;
+         color: white;
+      }
+    `}
+  </style>
+);
 
-  const moveItem = (index, direction) => {
-    const newItems = [...validBoardItems];
-    if (direction === 'left' && index > 0) {
-      [newItems[index - 1], newItems[index]] = [newItems[index], newItems[index - 1]];
-    } else if (direction === 'right' && index < newItems.length - 1) {
-      [newItems[index + 1], newItems[index]] = [newItems[index], newItems[index + 1]];
+// --- BRAND CONFIG ---
+const MAIN_BRAND_COLOR = "#34a4b8"; 
+
+// --- CRUISE LINE BRAND COLORS ---
+const LINE_COLORS = {
+  "Royal Caribbean": "#005DAA", 
+  "Disney Cruise Line": "#002664", 
+  "Norwegian Cruise Line": "#0033A0", 
+  "Holland America Line": "#152F4E", 
+  "Princess Cruises": "#005DAA", 
+  "Celebrity Cruises": "#0B1F3F", 
+  "Virgin Voyages": "#E3001B", 
+  "Regent Seven Seas Cruises": "#1E232C", 
+  "Explora Journeys": "#A48E66", 
+  "Oceania Cruises": "#9DA6AB", 
+  "Windstar Cruises": "#004B87", 
+  "Cunard Line": "#111111", 
+  "Carnival Cruise Line": "#E32726", 
+  "MSC Cruises": "#00325F", 
+  "Costa Cruises": "#FECB00", 
+  "Viking Ocean Cruises": "#98002E",
+};
+
+// --- LOGIC ENGINE ---
+const LOGIC_ENGINE = {
+  family: {
+    label: "Family Fun",
+    description: "Slides, kids clubs, active",
+    allowedLines: ["Royal Caribbean", "Disney Cruise Line", "Norwegian Cruise Line", "MSC Cruises"]
+  },
+  adults: {
+    label: "Adults Only",
+    description: "Romantic, nightlife, 18+",
+    allowedLines: ["Virgin Voyages", "Viking Ocean Cruises", "Saga Cruises"]
+  },
+  relaxing: {
+    label: "Relaxing & Scenic",
+    description: "Quiet, nature, premium",
+    allowedLines: ["Holland America Line", "Princess Cruises", "Celebrity Cruises"]
+  },
+  luxury: {
+    label: "Luxury & Culture",
+    description: "All-inclusive, smaller ships",
+    allowedLines: ["Regent Seven Seas Cruises", "Explora Journeys", "Oceania Cruises", "Windstar Cruises", "Cunard Line"]
+  },
+  budget: {
+    label: "Best Value",
+    description: "Great deals, quick getaways",
+    allowedLines: ["Carnival Cruise Line", "MSC Cruises", "Costa Cruises"]
+  }
+  // --- MOCK DATA ---
+const CRUISE_DATA = [
+  {
+    id: 1,
+    title: "7-Night Perfect Day at CocoCay",
+    line: "Royal Caribbean",
+    ship: "Icon of the Seas",
+    destination: "Caribbean",
+    date: "Dec 2025",
+    price: 1199,
+    image: "https://images.unsplash.com/photo-1548574505-5e239809ee19?auto=format&fit=crop&q=80&w=600",
+    rating: 4.9,
+    affiliateLink: "#",
+    description: "Experience the ultimate family vacation on the world's largest cruise ship. Featuring the largest waterpark at sea, 7 pools, and the dedicated Surfside neighborhood for young families.",
+    ports: ["Miami, FL", "Perfect Day at CocoCay", "St. Thomas", "St. Maarten"],
+    features: ["Category 6 Waterpark", "AquaDome", "Surfside Family Neighborhood"],
+    amazonProducts: [
+      { name: "Waterproof Phone Pouch", link: "#", price: "9.99", image: "https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?auto=format&fit=crop&q=80&w=200" },
+      { name: "Reef Safe Sunscreen", link: "#", price: "14.50", image: "https://images.unsplash.com/photo-1526947425960-945c6e72858f?auto=format&fit=crop&q=80&w=200" }
+    ],
+    excursions: [
+      { name: "CocoCay Waterpark Pass", link: "#", price: "89", image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=200" },
+      { name: "St. Maarten Catamaran Snorkel", link: "#", price: "120", image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&q=80&w=200" }
+    ]
+  },
+  {
+    id: 2,
+    title: "8-Night Eastern Caribbean",
+    line: "Virgin Voyages",
+    ship: "Scarlet Lady",
+    destination: "Caribbean",
+    date: "Feb 2026",
+    price: 1600,
+    image: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&q=80&w=600",
+    rating: 4.9,
+    affiliateLink: "#",
+    description: "A strictly adults-only experience that redefines luxury. With over $600 in value included (WiFi, dining, tips), this is the perfect romantic getaway with modern nightlife.",
+    ports: ["Miami, FL", "Puerto Plata", "Bimini Beach Club", "San Juan"],
+    features: ["Adults Only (18+)", "20+ Eateries Included", "Bimini Beach Club Party"],
+    amazonProducts: [
+      { name: "Elegant Evening Clutch", link: "#", price: "24.99", image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&q=80&w=200" },
+      { name: "Red Party Outfit Essentials", link: "#", price: "45.00", image: "https://images.unsplash.com/photo-1564557287817-3785e38ec1f5?auto=format&fit=crop&q=80&w=200" }
+    ],
+    excursions: [
+      { name: "San Juan Food Tour", link: "#", price: "75", image: "https://images.unsplash.com/photo-1599021406414-119777175396?auto=format&fit=crop&q=80&w=200" },
+      { name: "Waterfall Jumping in Puerto Plata", link: "#", price: "95", image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&q=80&w=200" }
+    ]
+  },
+  {
+    id: 3,
+    title: "7-Day Alaskan Glaciers",
+    line: "Holland America Line",
+    ship: "Koningsdam",
+    destination: "Alaska",
+    date: "May 2025",
+    price: 1100,
+    image: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=600",
+    rating: 4.8,
+    affiliateLink: "#",
+    description: "Immerse yourself in the wild beauty of Alaska. Holland America is the leader in Alaskan cruising, offering exclusive access to Glacier Bay National Park.",
+    ports: ["Vancouver, BC", "Juneau", "Skagway", "Glacier Bay", "Ketchikan"],
+    features: ["BBC Earth Experiences", "Music Walk", "Regional Cooking Demonstrations"],
+    amazonProducts: [
+      { name: "Waterproof Binoculars", link: "#", price: "55.00", image: "https://images.unsplash.com/photo-1526487034633-90d09d3b763e?auto=format&fit=crop&q=80&w=200" },
+      { name: "Warm Fleece Jacket", link: "#", price: "39.99", image: "https://images.unsplash.com/photo-1544022613-e87ca75a784a?auto=format&fit=crop&q=80&w=200" }
+    ],
+    excursions: [
+      { name: "White Pass Railway", link: "#", price: "145", image: "https://images.unsplash.com/photo-1517411606011-275d35a3922f?auto=format&fit=crop&q=80&w=200" },
+      { name: "Whale Watching Juneau", link: "#", price: "160", image: "https://images.unsplash.com/photo-1568430462989-44163eb1752f?auto=format&fit=crop&q=80&w=200" }
+    ]
+  },
+  {
+    id: 4,
+    title: "10-Night Mediterranean",
+    line: "Norwegian Cruise Line",
+    ship: "Norwegian Viva",
+    destination: "Mediterranean",
+    date: "Jun 2025",
+    price: 1450,
+    image: "https://images.unsplash.com/photo-1599640845513-5c2b12a32c46?auto=format&fit=crop&q=80&w=600",
+    rating: 4.7,
+    affiliateLink: "#",
+    description: "Island hop through the Mediterranean in style on NCL's newest class of ships. Enjoy freestyle cruising with no fixed dining times.",
+    ports: ["Rome (Civitavecchia)", "Santorini", "Mykonos", "Corfu", "Naples"],
+    features: ["Viva Speedway Go-Karts", "Indulge Food Hall", "The Drop Slide"],
+    amazonProducts: [
+      { name: "European Power Adapter", link: "#", price: "15.99", image: "https://images.unsplash.com/photo-1621255562770-692736b4e727?auto=format&fit=crop&q=80&w=200" },
+      { name: "Comfortable Walking Shoes", link: "#", price: "60.00", image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=200" }
+    ],
+    excursions: [] 
+  },
+  {
+    id: 5,
+    title: "4-Day Bahamas Getaway",
+    line: "Carnival Cruise Line",
+    ship: "Carnival Conquest",
+    destination: "Caribbean",
+    date: "Aug 2025",
+    price: 299,
+    image: "https://images.unsplash.com/photo-1506929562872-bb421503ef21?auto=format&fit=crop&q=80&w=600",
+    rating: 4.2,
+    affiliateLink: "#",
+    description: "The perfect quick escape. Enjoy fun in the sun, burgers by Guy Fieri, and the best comedy clubs at sea.",
+    ports: ["Miami, FL", "Nassau", "Half Moon Cay"],
+    features: ["Guy's Burger Joint", "Punchliner Comedy Club", "Serenity Adult Retreat"],
+    amazonProducts: [],
+    excursions: [
+      { name: "Atlantis Day Pass", link: "#", price: "110", image: "https://images.unsplash.com/photo-1563861826100-9cb868c06c74?auto=format&fit=crop&q=80&w=200" }
+    ]
+  },
+  {
+    id: 6,
+    title: "15-Day Viking Homelands",
+    line: "Viking Ocean Cruises",
+    ship: "Viking Mars",
+    destination: "Europe",
+    date: "Jul 2025",
+    price: 5499,
+    image: "https://images.unsplash.com/photo-1516484392579-38374d6b5e02?auto=format&fit=crop&q=80&w=600",
+    rating: 4.9,
+    affiliateLink: "#",
+    description: "A culturally enriching journey for the thinking person. No casinos, no kids, just pure exploration and Scandinavian design.",
+    ports: ["Stockholm", "Copenhagen", "Berlin", "Oslo", "Bergen"],
+    features: ["All Veranda Staterooms", "Shore Excursion Included in Every Port", "Nordic Spa Included"],
+    amazonProducts: [],
+    excursions: []
+  }
+];
+
+// --- EXTRA SUGGESTIONS (NOT IN CART YET) ---
+const SUGGESTED_ESSENTIALS = [
+  { id: 'sugg-1', name: "Universal Travel Adapter", price: "19.99", link: "#", image: "https://images.unsplash.com/photo-1585338107529-13afc5f02586?auto=format&fit=crop&q=80&w=150" },
+  { id: 'sugg-2', name: "Magnetic Cabin Hooks", price: "12.50", link: "#", image: "https://images.unsplash.com/photo-1624823183492-3599690f3319?auto=format&fit=crop&q=80&w=150" }
+];
+
+const App = () => {
+  const [step, setStep] = useState('wizard');
+  const [filters, setFilters] = useState({ destination: '', style: '' });
+  const [cart, setCart] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [filteredCruises, setFilteredCruises] = useState([]);
+  const [selectedCruise, setSelectedCruise] = useState(null);
+
+  // Safe Mode Storage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('cruiseCartV6');
+      if (saved) setCart(JSON.parse(saved));
+    } catch (e) { console.warn("Storage restricted"); }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('cruiseCartV6', JSON.stringify(cart));
+    } catch (e) {}
+  }, [cart]);
+
+  // Logic Engine
+  useEffect(() => {
+    let results = CRUISE_DATA;
+    if (filters.destination) results = results.filter(c => c.destination === filters.destination);
+    if (filters.style) {
+      const selectedLogic = LOGIC_ENGINE[filters.style];
+      if (selectedLogic) results = results.filter(c => selectedLogic.allowedLines.includes(c.line));
     }
-    setBoardItems(newItems);
+    setFilteredCruises(results);
+  }, [filters]);
+
+  const addToCart = (item, type, parentContext = '') => {
+    const itemId = item.id || `${type}-${item.name}-${Date.now()}`;
+    if (!cart.find(c => (c.title === item.title || c.name === item.name) && c.type === type)) {
+      setCart([...cart, { ...item, id: itemId, type, parentContext, checked: false }]);
+    }
+    setIsCartOpen(true);
+  };
+  
+  const handleRemoveFromCart = (id) => setCart(cart.filter(c => c.id !== id));
+  
+  const toggleItemCheck = (id) => {
+    setCart(cart.map(item => item.id === id ? { ...item, checked: !item.checked } : item));
   };
 
-  const shuffleLayout = () => {
-    const shuffled = [...validBoardItems].sort(() => Math.random() - 0.5);
-    const reRotated = shuffled.map(item => ({...item, rotation: Math.floor(Math.random() * 10) - 5}));
-    setBoardItems(reRotated);
+  const resetTool = () => {
+    setStep('wizard');
+    setFilters({ destination: '', style: '' });
   };
 
-  const handleShare = (platform) => {
-    const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent("My Cruisy Travel Getaway ✈️");
-    if (platform === 'pinterest') window.open(`https://pinterest.com/pin/create/button/?url=${url}&description=${text}`, '_blank');
-    if (platform === 'facebook') window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
-    if (platform === 'mail') window.open(`mailto:?subject=My Cruisy Travel Getaway&body=${text} ${url}`, '_blank');
-    if (platform === 'instagram') alert("To share on Instagram: \n1. Click 'Save / Print PDF' \n2. Save the image to your phone \n3. Post to Instagram!");
+  const handleEmailShare = () => {
+    const subject = encodeURIComponent("My Cruisy Vacation Checklist");
+    let bodyText = "My Vacation Plan:\n\n";
+    
+    const cruises = cart.filter(i => i.type === 'cruise');
+    const products = cart.filter(i => i.type === 'product');
+    const activities = cart.filter(i => i.type === 'activity');
+
+    if (cruises.length) {
+      bodyText += "--- CRUISES ---\n";
+      cruises.forEach(i => bodyText += `[${i.checked ? 'X' : ' '}] ${i.title} (${i.line}) - $${i.price}\nLink: ${i.affiliateLink}\n\n`);
+    }
+    if (products.length) {
+      bodyText += "--- GEAR TO BUY ---\n";
+      products.forEach(i => bodyText += `[${i.checked ? 'X' : ' '}] ${i.name} - $${i.price}\nLink: ${i.link}\n\n`);
+    }
+    if (activities.length) {
+      bodyText += "--- ACTIVITIES ---\n";
+      activities.forEach(i => bodyText += `[${i.checked ? 'X' : ' '}] ${i.name} - $${i.price}\nLink: ${i.link}\n\n`);
+    }
+
+    window.location.href = `mailto:?subject=${subject}&body=${encodeURIComponent(bodyText)}`;
   };
+  // --- SUB-COMPONENTS ---
 
-  return (
-    <div className="min-h-screen bg-slate-50 pb-20">
-      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-         <button onClick={() => setView('home')} className="text-gray-500 font-bold text-sm flex items-center hover:text-brand"><ArrowLeft size={16} className="mr-1"/> Home</button>
-         <span className="text-teal-600 font-bold text-sm hidden md:inline">Style Board Creator</span>
-         <button onClick={() => setView('mybag')} className="text-gray-500 font-bold text-sm flex items-center hover:text-brand">Bag <ArrowRight size={16} className="ml-1"/></button>
-      </div>
+  const CruiseDetailsModal = () => {
+    if (!selectedCruise) return null;
+    
+    const color = LINE_COLORS[selectedCruise.line] || MAIN_BRAND_COLOR;
+    const hasAmazon = selectedCruise.amazonProducts && selectedCruise.amazonProducts.length > 0;
+    const hasExcursions = selectedCruise.excursions && selectedCruise.excursions.length > 0;
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    return (
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedCruise(null)} />
+        <div className="relative bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-200">
           
-          <div className="lg:col-span-4 space-y-6 order-2 lg:order-1">
-             <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                <h3 className="font-header text-lg text-gray-800 mb-4">1. Choose Theme</h3>
-                <div className="grid grid-cols-2 gap-3">
-                   {Object.keys(THEMES).map(t => (
-                     <button key={t} onClick={() => setCurrentTheme(t)} className={`flex items-center p-3 rounded-xl border-2 transition-all ${currentTheme === t ? 'border-teal-500 bg-cyan-50 text-teal-700' : 'border-transparent bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
-                       <span className="mr-2">{THEMES[t].icon}</span><span className="text-sm font-bold">{t}</span>
-                     </button>
-                   ))}
-                </div>
-             </div>
+          <div className="relative h-64">
+            <img src={selectedCruise.image} className="w-full h-full object-cover" alt={selectedCruise.title} />
+            <button onClick={() => setSelectedCruise(null)} className="absolute top-4 right-4 bg-white/90 p-2 rounded-full shadow-lg hover:bg-white text-gray-800 transition-all"><X size={24} /></button>
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 pt-20">
+              <span className="bg-white/20 backdrop-blur-md text-white px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider mb-2 inline-block border border-white/30">{selectedCruise.line}</span>
+              <h2 className="text-3xl font-brand text-white leading-tight">{selectedCruise.title}</h2>
+            </div>
+          </div>
 
-             <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 h-[600px] flex flex-col">
-                <h3 className="font-header text-lg text-gray-800 mb-4">2. Add Items</h3>
-                <div className="flex border-b border-gray-100 mb-4 overflow-x-auto">
-                  {['Vibes', 'Essentials', 'Photos', 'Stickers'].map(tab => (
-                    <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 pb-3 px-2 text-sm font-bold transition-colors whitespace-nowrap ${activeTab === tab ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-400 hover:text-gray-600'}`}>{tab}</button>
+          <div className="p-6 md:p-8 space-y-8">
+            <div className="grid grid-cols-3 gap-4 border-b border-gray-100 pb-6">
+              <div className="text-center"><Ship className="w-6 h-6 mx-auto mb-2 text-gray-400" /><p className="text-xs text-gray-400 font-bold uppercase">Ship</p><p className="font-bold text-gray-800 text-sm">{selectedCruise.ship}</p></div>
+              <div className="text-center border-l border-gray-100"><Calendar className="w-6 h-6 mx-auto mb-2 text-gray-400" /><p className="text-xs text-gray-400 font-bold uppercase">Date</p><p className="font-bold text-gray-800 text-sm">{selectedCruise.date}</p></div>
+              <div className="text-center border-l border-gray-100"><Star className="w-6 h-6 mx-auto mb-2 text-yellow-400 fill-current" /><p className="text-xs text-gray-400 font-bold uppercase">Rating</p><p className="font-bold text-gray-800 text-sm">{selectedCruise.rating}/5</p></div>
+            </div>
+
+            <div>
+              <h3 className="font-brand text-xl text-gray-800 mb-3 flex items-center gap-2"><Info size={20} style={{ color: color }} /> About this Sailing</h3>
+              <p className="font-body text-gray-600 leading-relaxed">{selectedCruise.description}</p>
+            </div>
+
+            <div>
+              <h3 className="font-brand text-xl text-gray-800 mb-3 flex items-center gap-2"><Navigation size={20} style={{ color: color }} /> Ports of Call</h3>
+              <div className="flex flex-wrap gap-2">
+                {selectedCruise.ports ? selectedCruise.ports.map((port, idx) => (<span key={idx} className="px-3 py-1.5 bg-gray-100 rounded-lg text-sm font-medium text-gray-700 flex items-center"><MapPin size={12} className="mr-1 opacity-50" /> {port}</span>)) : null}
+              </div>
+            </div>
+
+            {hasExcursions && (
+              <div className="bg-orange-50 rounded-2xl p-5 border border-orange-100">
+                <h3 className="font-brand text-xl text-gray-800 mb-3 flex items-center gap-2"><Ticket size={20} className="text-orange-500" /> Top Shore Excursions</h3>
+                <div className="space-y-3">
+                  {selectedCruise.excursions.map((exc, idx) => (
+                    <div key={idx} className="flex items-center justify-between bg-white p-3 rounded-xl border border-orange-100 shadow-sm">
+                      <div className="flex items-center gap-3">
+                        <img src={exc.image} className="w-10 h-10 rounded-md object-cover" />
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-700">{exc.name}</div>
+                          <div className="text-xs text-gray-400">From ${exc.price}</div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => addToCart(exc, 'activity', selectedCruise.title)} className="p-2 bg-gray-100 hover:bg-orange-100 text-gray-500 hover:text-orange-600 rounded-lg transition-colors" title="Save to List"><Heart size={18} /></button>
+                        <a href={exc.link} target="_blank" rel="noopener noreferrer" className="p-2 bg-orange-100 text-orange-600 rounded-lg hover:bg-orange-200 font-bold text-xs flex items-center">Book <ChevronRight size={14} /></a>
+                      </div>
+                    </div>
                   ))}
                 </div>
-                
-                <div className="overflow-y-auto flex-1 pr-2 space-y-3 custom-scroll">
-                   {(activeTab === 'Vibes' ? vibeItems : activeTab === 'Essentials' ? ESSENTIALS_DATA : []).map(item => (
-                     <div key={item.id} onClick={() => addToBoard(item, 'product')} className="flex items-center p-2 rounded-xl hover:bg-gray-50 cursor-pointer group border border-transparent hover:border-gray-100 transition-all">
-                        <img src={item.img} alt={item.name} className="w-12 h-12 rounded-lg object-cover mr-3 shadow-sm" />
-                        <div className="flex-1"><p className="font-bold text-sm text-gray-800">{item.name}</p><p className="text-xs text-gray-400">${item.price}</p></div>
-                        <Plus size={18} className="text-gray-300 group-hover:text-teal-600"/>
-                     </div>
-                   ))}
-                   {activeTab === 'Photos' && (
-                     <div className="grid grid-cols-2 gap-3">
-                        {SCENIC_PHOTOS.map(p => (
-                          <div key={p.id} onClick={() => addToBoard({name: p.name, img: p.url}, 'photo')} className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group hover:opacity-90">
-                             <img src={p.url} className="w-full h-full object-cover" />
-                             <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
-                          </div>
-                        ))}
-                     </div>
-                   )}
-                   {activeTab === 'Stickers' && (
-                     <div className="grid grid-cols-3 gap-3">
-                       {STICKERS.map(s => (
-                         <button key={s.id} onClick={() => addToBoard({name: s.content}, 'sticker')} className={`h-20 rounded-xl bg-gray-50 flex items-center justify-center text-3xl hover:bg-gray-100 hover:scale-105 transition-all ${s.type === 'text' ? 'text-xs font-bold uppercase tracking-widest px-2 text-center bg-black text-white' : ''}`}>{s.content}</button>
-                       ))}
-                       <button onClick={() => addToBoard({name: 'Note'}, 'note')} className="h-20 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 hover:border-teal-500 hover:text-teal-500"><Type size={20} className="mb-1"/><span className="text-xs font-bold">Note</span></button>
-                     </div>
-                   )}
-                </div>
-             </div>
-          </div>
+              </div>
+            )}
 
-          <div className="lg:col-span-8 flex flex-col items-center order-1 lg:order-2">
-             <div id="print-area" className={`w-full max-w-[600px] aspect-[3/4] ${theme.bg} ${theme.border} shadow-2xl relative overflow-hidden transition-all duration-500 p-8 flex flex-col`}>
-                <div className="absolute inset-0 pointer-events-none z-0">{theme.decoration}</div>
-                
-                {/* BRANDING HEADER */}
-                <div className="text-center mb-8 z-10 relative flex flex-col items-center">
-                   <img src={BRAND_LOGO} alt="Cruisy Travel" className="h-12 w-auto mb-2 opacity-90 mix-blend-multiply" />
-                   <h2 className={`text-3xl font-header ${theme.text} drop-shadow-sm leading-tight`}>
-                     My Cruisy Travel Getaway
-                   </h2>
-                </div>
-
-                <div className="flex-1 grid grid-cols-4 gap-4 content-start relative z-10 auto-rows-min">
-                   {validBoardItems.map((item, index) => (
-                     <div 
-                        key={item.boardId} 
-                        className={`relative group animate-in fade-in zoom-in duration-300 ${
-                          item.size === 'medium' ? 'col-span-2 row-span-2' : 
-                          item.size === 'large' ? 'col-span-2 row-span-2' : 
-                          'col-span-1'
-                        }`}
-                     >
-                        <div className="absolute -top-2 -right-2 z-30 flex opacity-0 group-hover:opacity-100 transition-opacity gap-1">
-                           <button onClick={(e) => {e.stopPropagation(); moveItem(index, 'left');}} className="bg-white text-gray-600 rounded-full p-1 shadow-md hover:bg-gray-100" title="Move Left"><ArrowLeft size={10}/></button>
-                           <button onClick={(e) => {e.stopPropagation(); moveItem(index, 'right');}} className="bg-white text-gray-600 rounded-full p-1 shadow-md hover:bg-gray-100" title="Move Right"><ArrowRight size={10}/></button>
-                           
-                           {/* RESIZE BUTTON - HIDDEN FOR STICKERS */}
-                           {item.type !== 'sticker' && (
-                             <button onClick={(e) => {e.stopPropagation(); toggleSize(item.boardId);}} className="bg-gray-800 text-white rounded-full p-1 shadow-md"><Maximize2 size={10}/></button>
-                           )}
-                           
-                           <button onClick={(e) => {e.stopPropagation(); removeFromBoard(item.boardId);}} className="bg-red-500 text-white rounded-full p-1 shadow-md"><X size={10}/></button>
+            {hasAmazon && (
+              <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100">
+                <h3 className="font-brand text-xl text-gray-800 mb-3 flex items-center gap-2"><ShoppingBag size={20} className="text-gray-600" /> Pack Like a Pro</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {selectedCruise.amazonProducts.map((prod, idx) => (
+                    <div key={idx} className="bg-white p-3 rounded-xl border border-gray-200 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <img src={prod.image} className="w-10 h-10 rounded-md object-cover flex-shrink-0" />
+                        <div className="min-w-0">
+                          <div className="font-medium text-sm text-gray-800 truncate">{prod.name}</div>
+                          <div className="text-xs text-teal-600 font-bold">${prod.price}</div>
                         </div>
-
-                        {(item.type === 'product' || item.type === 'photo') && (
-                          <div className={`relative w-full h-full bg-white p-2 shadow-md transform transition-transform overflow-hidden ${item.type === 'product' ? 'rounded-none' : 'rounded-none'}`} style={{transform: `rotate(${item.rotation}deg)`}}>
-                             <img src={item.img} alt={item.name} className="w-full h-full object-cover border border-gray-100" />
-                             {item.type === 'product' && <div className="absolute bottom-0 left-0 right-0 bg-white/90 p-1 text-[10px] font-bold text-center truncate">{item.name}</div>}
-                          </div>
-                        )}
-                        
-                        {item.type === 'sticker' && (
-                          <div className="flex justify-center items-center h-full w-full" style={{transform: `rotate(${item.rotation}deg)`}}>
-                             <span className="text-6xl drop-shadow-md filter">{item.name}</span>
-                          </div>
-                        )}
-                        
-                        {item.type === 'note' && (
-                          <div className="bg-white p-4 shadow-lg h-full relative" style={{transform: `rotate(${item.rotation}deg)`, background: 'linear-gradient(to bottom, #fff 0%, #fff 100%), linear-gradient(to bottom, #dbeafe 1px, transparent 1px)', backgroundSize: '100% 24px'}}>
-                             <div className="absolute top-2 right-2 opacity-40"><Compass size={16} className="text-brand"/></div>
-                             <textarea placeholder="Write here..." className="w-full h-full bg-transparent border-none text-sm text-gray-700 focus:ring-0 resize-none leading-[24px]" style={{fontFamily: '"Patrick Hand", cursive'}}/>
-                          </div>
-                        )}
-                     </div>
-                   ))}
-                   {validBoardItems.length === 0 && <div className="col-span-4 h-64 flex flex-col items-center justify-center text-center opacity-30"><Camera size={48} className={theme.text}/><p className={`mt-2 font-bold ${theme.text}`}>Start Creating</p><p className="text-xs">Add items from the menu</p></div>}
+                      </div>
+                      <div className="flex gap-1">
+                        <button onClick={() => addToCart(prod, 'product', selectedCruise.title)} className="p-1.5 bg-gray-50 hover:bg-teal-50 rounded text-gray-400 hover:text-teal-500"><Heart size={16} /></button>
+                        <a href={prod.link} target="_blank" rel="noopener noreferrer" className="p-1.5 bg-gray-100 hover:bg-gray-200 rounded text-gray-600"><ShoppingBag size={16} /></a>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-             </div>
+              </div>
+            )}
 
-             <div className="mt-8 flex flex-wrap justify-center gap-4">
-                <button onClick={shuffleLayout} className="flex items-center px-6 py-3 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-colors shadow-sm"><Shuffle size={18} className="mr-2"/> Shuffle Layout</button>
-                <button onClick={() => setBoardItems([])} className="px-6 py-3 rounded-xl text-gray-500 font-bold hover:text-red-500 transition-colors">Clear</button>
-                <button onClick={() => window.print()} className="flex items-center px-8 py-3 rounded-xl bg-gray-900 text-white font-bold shadow-lg hover:bg-teal-600 transition-all"><Download size={18} className="mr-2"/> Save / Print PDF</button>
-                
-                <div className="flex gap-2 ml-4 border-l border-gray-200 pl-4 items-center">
-                   <span className="text-xs font-bold text-gray-400 mr-2">SHARE:</span>
-                   <button onClick={() => handleShare('facebook')} className="p-2 bg-blue-600 text-white rounded-full hover:scale-110 transition-transform"><Facebook size={16}/></button>
-                   <button onClick={() => handleShare('pinterest')} className="p-2 bg-red-600 text-white rounded-full hover:scale-110 transition-transform"><Pin size={16}/></button>
-                   <button onClick={() => handleShare('instagram')} className="p-2 bg-pink-600 text-white rounded-full hover:scale-110 transition-transform"><Instagram size={16}/></button>
-                   <button onClick={() => handleShare('mail')} className="p-2 bg-gray-500 text-white rounded-full hover:scale-110 transition-transform"><Mail size={16}/></button>
-                </div>
-             </div>
+            <div className="pt-6 border-t border-gray-100 flex items-center justify-between sticky bottom-0 bg-white pb-2">
+               <div><p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Starting From</p><p className="font-brand text-3xl" style={{ color: color }}>${selectedCruise.price}</p></div>
+               <div className="flex gap-3">
+                 <button onClick={() => addToCart(selectedCruise, 'cruise')} className="px-6 py-2 rounded-xl border-2 font-body font-bold text-base transition-all hover:bg-gray-50" style={{ borderColor: color, color: color }}>Save</button>
+                 <a href={selectedCruise.affiliateLink} target="_blank" rel="noopener noreferrer" className="px-6 py-2 rounded-xl text-white font-body font-bold text-base shadow-md hover:shadow-xl hover:-translate-y-1 transition-all" style={{ backgroundColor: color }}>View Deal</a>
+               </div>
+            </div>
           </div>
+        </div>
+      </div>
+    );
+  };
+
+  const PrintableItinerary = () => (
+    <div className="print-only p-8 max-w-3xl mx-auto font-body text-black">
+      <div className="flex items-center gap-4 mb-8 border-b-2 pb-6 border-gray-800">
+        <div className="w-12 h-12 rounded-full flex items-center justify-center bg-gray-800 text-white">
+          <Anchor size={24} />
+        </div>
+        <div>
+          <h1 className="font-brand text-4xl">Cruisy</h1>
+          <p className="uppercase tracking-widest text-sm">Vacation Checklist</p>
+        </div>
+      </div>
+
+      <div className="space-y-8">
+        {[
+          { type: 'cruise', title: 'Cruises to Book' }, 
+          { type: 'activity', title: 'Activities & Excursions' }, 
+          { type: 'product', title: 'Packing List' }
+        ].map(section => {
+          const items = cart.filter(c => c.type === section.type);
+          if (items.length === 0) return null;
+          return (
+            <div key={section.type}>
+              <h3 className="font-brand text-xl border-b pb-2 mb-4 uppercase">{section.title}</h3>
+              <div className="space-y-4">
+                {items.map(item => (
+                  <div key={item.id} className="flex gap-4 items-center">
+                    <div className="w-6 h-6 border-2 border-gray-300 rounded flex items-center justify-center"></div>
+                    <div className="flex-1">
+                      <div className="font-bold text-lg">{item.title || item.name}</div>
+                      <div className="text-sm text-gray-500">{item.line || item.parentContext} - ${item.price}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  );
+  const Header = () => (
+    <header className="no-print sticky top-0 z-50 bg-white shadow-sm border-b border-gray-100">
+      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="flex items-center gap-2 cursor-pointer" onClick={resetTool}>
+          <div className="w-9 h-9 rounded-full flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: MAIN_BRAND_COLOR }}>
+            <Anchor size={20} />
+          </div>
+          <div className="flex flex-col leading-none">
+            <span className="font-brand text-xl tracking-wide text-gray-800">Cruisy</span>
+            <span className="font-brand text-sm tracking-widest text-gray-500">Cruise Finder</span>
+          </div>
+        </div>
+        <button onClick={() => setIsCartOpen(true)} className="relative p-2 rounded-full hover:bg-gray-100 transition-colors">
+          <div className="relative">
+            <Heart className={`w-7 h-7 ${cart.length > 0 ? 'fill-current' : ''}`} style={{ color: MAIN_BRAND_COLOR }} />
+            {cart.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full font-body">{cart.length}</span>
+            )}
+          </div>
+        </button>
+      </div>
+    </header>
+  );
+
+  const Wizard = () => (
+    <div className="no-print max-w-4xl mx-auto px-4 py-12">
+      <div className="text-center mb-10">
+        <h1 className="font-brand text-4xl md:text-5xl text-gray-900 mb-4">
+          Find Your Perfect <span style={{ color: MAIN_BRAND_COLOR }}>Cruise</span>
+        </h1>
+        <p className="font-body text-gray-500 text-lg font-medium">Select a destination and your vibe to see curated matches.</p>
+      </div>
+      <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 md:p-10">
+        <div className="grid md:grid-cols-2 gap-10">
+          
+          <div className="space-y-5">
+            <label className="flex items-center gap-2 font-brand text-gray-700 text-xl"><MapPin className="w-6 h-6" style={{ color: MAIN_BRAND_COLOR }} /> Where to?</label>
+            <div className="grid grid-cols-2 gap-3">
+               {['Caribbean', 'Mediterranean', 'Alaska', 'Europe', 'Transatlantic'].map(dest => {
+                const destColors = {
+                  'Caribbean': 'border-cyan-300 hover:bg-cyan-50 text-cyan-800',
+                  'Mediterranean': 'border-blue-300 hover:bg-blue-50 text-blue-800',
+                  'Alaska': 'border-indigo-300 hover:bg-indigo-50 text-indigo-800',
+                  'Europe': 'border-rose-300 hover:bg-rose-50 text-rose-800',
+                  'Transatlantic': 'border-violet-300 hover:bg-violet-50 text-violet-800',
+                };
+                const colorClass = destColors[dest];
+                const isSelected = filters.destination === dest;
+                const activeStyles = {
+                  'Caribbean': { bg: '#ecfeff', border: '#22d3ee' }, 
+                  'Mediterranean': { bg: '#eff6ff', border: '#60a5fa' }, 
+                  'Alaska': { bg: '#eef2ff', border: '#818cf8' }, 
+                  'Europe': { bg: '#fff1f2', border: '#fb7185' }, 
+                  'Transatlantic': { bg: '#f5f3ff', border: '#a78bfa' }, 
+                };
+                const active = activeStyles[dest];
+
+                return (
+                  <button
+                    key={dest}
+                    onClick={() => setFilters({ ...filters, destination: dest })}
+                    className={`p-4 rounded-2xl border-2 text-left transition-all font-body font-medium ${colorClass} ${isSelected ? 'shadow-sm' : 'bg-white'}`}
+                    style={{ backgroundColor: isSelected ? active.bg : '', borderColor: isSelected ? active.border : '', borderWidth: '2px' }}
+                  >
+                    <span className="block">{dest}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="space-y-5">
+            <label className="flex items-center gap-2 font-brand text-gray-700 text-xl"><Sun className="w-6 h-6" style={{ color: MAIN_BRAND_COLOR }} /> What's the Vibe?</label>
+            <div className="space-y-3">
+              {Object.entries(LOGIC_ENGINE).map(([key, data]) => {
+                 const icons = { family: Users, adults: Wine, relaxing: Sun, luxury: Star, budget: DollarSign };
+                 const Icon = icons[key];
+                 const isSelected = filters.style === key;
+                 const vibeColors = {
+                   family: "bg-sky-100 text-sky-600",
+                   adults: "bg-rose-100 text-rose-600",
+                   relaxing: "bg-emerald-100 text-emerald-600",
+                   luxury: "bg-violet-100 text-violet-600",
+                   budget: "bg-amber-100 text-amber-600"
+                 };
+                 return (
+                  <button key={key} onClick={() => setFilters({ ...filters, style: key })} className={`w-full p-3 rounded-2xl border-2 flex items-center gap-4 transition-all font-body group hover:bg-gray-50 ${isSelected ? 'shadow-sm' : 'bg-white'}`} style={{ borderColor: isSelected ? MAIN_BRAND_COLOR : '#f3f4f6', backgroundColor: isSelected ? '#f0fdff' : '' }}>
+                    <div className={`p-3 rounded-xl transition-colors ${isSelected ? 'bg-teal-100 text-teal-700' : vibeColors[key]}`}>
+                      <Icon size={24} strokeWidth={2.5} />
+                    </div>
+                    <div className="text-left">
+                      <div className="font-bold text-gray-800 text-lg group-hover:text-gray-900">{data.label}</div>
+                      <div className="text-xs text-gray-500 font-medium">{data.description}</div>
+                    </div>
+                    {isSelected && <Check className="ml-auto w-6 h-6" style={{ color: MAIN_BRAND_COLOR }} />}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+        <div className="mt-10 pt-8 border-t flex justify-end">
+          <button onClick={() => setStep('results')} disabled={!filters.destination || !filters.style} className="px-8 py-3 rounded-xl font-brand text-lg text-white shadow-lg transition-all hover:scale-105" style={{ backgroundColor: (!filters.destination || !filters.style) ? '#ccc' : MAIN_BRAND_COLOR }}>Show Cruises <ChevronRight size={20} /></button>
         </div>
       </div>
     </div>
   );
-};
 
-// ... Planner, MyBag, and Main App ...
-const Planner = ({ addToBag, setView }) => (
-  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 bg-slate-50 min-h-screen">
-    <div className="flex justify-between items-center mb-8">
-       <button onClick={() => setView('home')} className="flex items-center text-gray-500 hover:text-teal-600 font-bold"><ArrowLeft size={18} className="mr-2"/> Home</button>
-       <button onClick={() => setView('styleboard')} className="flex items-center bg-white text-teal-600 border border-teal-600 px-4 py-2 rounded-lg font-bold hover:bg-teal-600 hover:text-white transition-all">Go to Style Board <ArrowRight size={18} className="ml-2"/></button>
-    </div>
-    <div className="text-center mb-12">
-      <h2 className="text-4xl font-header text-gray-900 mb-4">Essentials List</h2>
-      <p className="text-lg text-gray-500">Quick-add the basics to your shopping bag.</p>
-    </div>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-       {ESSENTIALS_DATA.map(item => (
-         <div key={item.id} className="bg-white p-4 rounded-2xl shadow-sm flex items-center justify-between group hover:border-teal-500 border border-transparent transition-all">
-            <div className="flex items-center">
-               <img src={item.img} className="w-16 h-16 rounded-lg object-cover mr-4 shadow-sm border border-gray-100" />
-               <div><p className="font-bold text-gray-800">{item.name}</p><p className="text-xs text-gray-400">${item.price}</p></div>
+  const Results = () => (
+    <div className="no-print max-w-6xl mx-auto px-4 py-8">
+      <div className="mb-8">
+        <button onClick={() => setStep('wizard')} className="font-body text-gray-500 hover:text-gray-800 flex items-center gap-1 mb-4 font-bold text-sm"><ChevronLeft size={16} /> Edit Filters</button>
+        <h2 className="font-brand text-3xl text-gray-800">Recommended Sailings</h2>
+      </div>
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {filteredCruises.map((cruise) => {
+          const cardColor = LINE_COLORS[cruise.line] || MAIN_BRAND_COLOR;
+          const inCart = cart.find(c => c.id === cruise.id && c.type === 'cruise');
+          return (
+            <div key={cruise.id} className="bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100 flex flex-col">
+              <div className="relative h-56">
+                <img src={cruise.image} className="w-full h-full object-cover" alt={cruise.title} />
+                <button onClick={() => addToCart(cruise, 'cruise')} className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-md">
+                  <Heart size={20} className={inCart ? "fill-current" : "text-gray-300"} style={{ color: inCart ? MAIN_BRAND_COLOR : '' }} />
+                </button>
+              </div>
+              <div className="p-6 flex flex-col flex-grow">
+                <h3 className="font-brand text-xl text-gray-900 mb-2">{cruise.title}</h3>
+                <div className="mt-auto pt-4 flex justify-between items-center gap-3">
+                  <div className="flex-1">
+                    <p className="font-brand text-2xl" style={{ color: cardColor }}>${cruise.price}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => setSelectedCruise(cruise)}
+                      className="px-3 py-1.5 rounded-lg text-gray-600 font-body font-bold text-sm border border-gray-200 hover:bg-gray-50"
+                    >
+                      Details
+                    </button>
+                    <a 
+                      href={cruise.affiliateLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-1.5 rounded-lg text-white font-body font-bold text-sm shadow-md hover:shadow-lg hover:-translate-y-1 transition-all"
+                      style={{ backgroundColor: cardColor }}
+                    >
+                      View Deal
+                    </a>
+                  </div>
+                </div>
+              </div>
             </div>
-            <button onClick={() => addToBag(item)} className="p-2 bg-gray-50 rounded-full hover:bg-teal-600 hover:text-white transition-all"><Plus size={18}/></button>
-         </div>
-       ))}
+          )
+        })}
+      </div>
     </div>
-  </div>
-);
+  );
 
-const MyBag = ({ myBag, setMyBag, removeFromBag, toggleCheck, estimatedTotal, handleBuy, setView }) => {
   return (
-    <div className="max-w-3xl mx-auto px-4 py-12 min-h-screen">
-      <div className="flex justify-between items-center mb-8">
-         <button onClick={() => setView('planner')} className="flex items-center text-gray-500 hover:text-teal-600 font-bold"><ArrowLeft size={18} className="mr-2"/> Back to Essentials</button>
-         <button onClick={() => setView('styleboard')} className="flex items-center text-teal-600 hover:text-gray-900 font-bold">Go to Style Board <ArrowRight size={18} className="ml-2"/></button>
-      </div>
-      <div className="flex items-center justify-between mb-8">
-         <h2 className="text-3xl font-header text-gray-900">Your Trip Kit</h2>
-      </div>
-      {myBag.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
-           <ShoppingBag size={64} className="mx-auto text-gray-200 mb-4"/>
-           <p className="text-gray-500">Empty Bag.</p>
-           <button onClick={() => setView('styleboard')} className="mt-4 font-bold text-teal-600">Create a Board</button>
-        </div>
-      ) : (
-        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-           <div className="p-6 bg-gray-50 flex justify-between items-center border-b border-gray-100">
-              <span className="font-bold text-gray-500 text-xs uppercase">{myBag.length} Items</span>
-              <span className="font-header text-2xl text-gray-900">${estimatedTotal}</span>
-           </div>
-           <div className="divide-y divide-gray-50">
-             {myBag.map(item => (
-               <div key={item.id} className="p-4 flex items-center justify-between hover:bg-gray-50">
-                  <div className="flex items-center">
-                     <button onClick={() => toggleCheck(item.id)} className={`mr-4 ${item.checked ? 'text-teal-600' : 'text-gray-300'}`}>{item.checked ? <CheckSquare size={24}/> : <Square size={24}/>}</button>
-                     {item.img && <img src={item.img} className="w-10 h-10 rounded-md object-cover mr-3" />}
-                     <span className={`font-medium ${item.checked ? 'line-through text-gray-300' : 'text-gray-800'}`}>{item.name}</span>
+    <div className="min-h-screen bg-slate-50 font-body text-gray-800 pb-20">
+      <GlobalStyles />
+      <PrintableItinerary />
+      <CruiseDetailsModal />
+      <Header />
+      {step === 'wizard' ? <Wizard /> : <Results />}
+      
+      {isCartOpen && (
+        <>
+          <div className="no-print fixed inset-0 bg-black/40 backdrop-blur-sm z-50" onClick={() => setIsCartOpen(false)} />
+          <div className="no-print fixed top-0 right-0 h-full w-full sm:w-96 bg-white z-[60] shadow-2xl flex flex-col">
+            <div className="p-6 border-b flex justify-between items-center bg-gray-50">
+              <h2 className="font-brand text-xl text-gray-800 flex items-center gap-2"><Heart className="w-5 h-5 fill-current" style={{ color: MAIN_BRAND_COLOR }} /> My Checklist</h2>
+              <button onClick={() => setIsCartOpen(false)}><X size={20} /></button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+              {[
+                { type: 'cruise', label: 'Cruises', icon: Ship },
+                { type: 'product', label: 'Gear to Buy', icon: ShoppingBag },
+                { type: 'activity', label: 'Excursions', icon: Ticket }
+              ].map(section => {
+                const items = cart.filter(c => c.type === section.type);
+                if (items.length === 0) return null;
+                return (
+                  <div key={section.type}>
+                     <h3 className="font-brand text-sm text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2"><section.icon size={14} /> {section.label}</h3>
+                     <div className="space-y-3">
+                       {items.map(item => {
+                         const itemLink = item.affiliateLink || item.link;
+                         return (
+                           <div key={item.id} className="flex gap-3 items-start group">
+                              <label className="relative flex items-center pt-1 cursor-pointer">
+                                <input type="checkbox" className="custom-checkbox sr-only" checked={item.checked} onChange={() => toggleItemCheck(item.id)} />
+                                <div className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-colors ${item.checked ? 'bg-teal-500 border-teal-500 text-white' : 'border-gray-300'}`} style={{ backgroundColor: item.checked ? MAIN_BRAND_COLOR : '', borderColor: item.checked ? MAIN_BRAND_COLOR : '' }}>
+                                  {item.checked && <Check size={12} strokeWidth={4} />}
+                                </div>
+                              </label>
+                              <img src={item.image} className="w-12 h-12 rounded-md object-cover flex-shrink-0 bg-gray-100" />
+                              <div className="flex-1">
+                                <div className={`font-bold text-sm leading-tight transition-all ${item.checked ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                                  {item.title || item.name}
+                                </div>
+                                <div className="text-xs text-gray-400 mb-1">{item.line || item.parentContext}</div>
+                                <div className="flex items-center gap-3">
+                                  <a href={itemLink} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-teal-600 hover:underline">Book/Buy</a>
+                                  
+                                  {item.type === 'cruise' && (
+                                    <button 
+                                      onClick={() => { setIsCartOpen(false); setSelectedCruise(item); }}
+                                      className="text-xs text-gray-400 hover:text-teal-600 flex items-center gap-1"
+                                      title="View Details"
+                                    >
+                                      <Info size={12} /> Details
+                                    </button>
+                                  )}
+
+                                  <button onClick={() => handleRemoveFromCart(item.id)} className="text-xs text-gray-400 hover:text-gray-600">Remove</button>
+                                </div>
+                              </div>
+                           </div>
+                         )
+                       })}
+                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                     <button onClick={() => handleBuy(item.name)} className="px-3 py-1.5 bg-teal-600 text-white text-xs font-bold rounded-lg hover:bg-cyan-600">Amazon</button>
-                     <button onClick={() => removeFromBag(item.id)} className="p-2 text-gray-300 hover:text-red-500"><Trash2 size={18}/></button>
-                  </div>
-               </div>
-             ))}
-           </div>
-        </div>
+                )
+              })}
+              {cart.length === 0 && <div className="text-center py-10 text-gray-400">Your list is empty.</div>}
+
+              {/* UPDATED: Suggested Items Section */}
+              <div className="border-t border-gray-100 pt-6 mt-6">
+                <h3 className="font-brand text-sm text-gray-400 uppercase tracking-widest mb-3">Don't Forget Essentials</h3>
+                <div className="grid grid-cols-1 gap-2">
+                  {SUGGESTED_ESSENTIALS.map(item => {
+                    // Don't show if already added
+                    if (cart.find(c => c.name === item.name)) return null;
+                    return (
+                      <div key={item.id} className="flex items-center gap-3 bg-gray-50 p-2 rounded-lg border border-gray-100">
+                        <img src={item.image} className="w-10 h-10 rounded object-cover" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-gray-700 truncate">{item.name}</div>
+                          <div className="text-xs text-gray-500">${item.price}</div>
+                        </div>
+                        <button onClick={() => addToCart(item, 'product', 'Essentials')} className="text-teal-600 hover:bg-teal-100 p-1.5 rounded-full transition-colors"><PlusCircle size={20} /></button>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+            
+            {cart.length > 0 && (
+              <div className="p-4 border-t bg-gray-50 space-y-3">
+                <button onClick={handleEmailShare} className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-gray-300 rounded-xl font-brand text-gray-700 hover:bg-gray-50">
+                  <Mail size={18} /> Email Checklist
+                </button>
+                <button onClick={() => window.print()} className="w-full flex items-center justify-center gap-2 py-3 text-white rounded-xl font-brand shadow-md hover:opacity-90" style={{ backgroundColor: MAIN_BRAND_COLOR }}>
+                  <Printer size={18} /> Print Checklist
+                </button>
+              </div>
+            )}
+          </div>
+        </>
       )}
     </div>
   );
 };
 
-export default function App() {
-  const [view, setView] = useState('home'); 
-  const [myBag, setMyBag] = useState([]);
-
-  const addToBag = (item) => {
-    const bagItem = { ...item, id: item.id + '_' + Date.now(), checked: false };
-    setMyBag([...myBag, bagItem]);
-  };
-
-  const removeFromBag = (id) => setMyBag(myBag.filter(i => i.id !== id));
-  const toggleCheck = (id) => setMyBag(myBag.map(i => i.id === id ? { ...i, checked: !i.checked } : i));
-  const estimatedTotal = useMemo(() => myBag.reduce((acc, curr) => acc + curr.price, 0).toFixed(2), [myBag]);
-
-  const handleBuy = (itemName) => {
-    window.open(`https://www.amazon.com/s?k=${encodeURIComponent(itemName)}&tag=${AMAZON_TAG}`, '_blank');
-  };
-
-  return (
-    <div className="min-h-screen bg-white font-body text-gray-800 flex flex-col">
-      <div className="print:hidden">
-        <Header view={view} setView={setView} myBagCount={myBag.length} />
-      </div>
-      <div className="flex-grow">
-        {view === 'home' && <Hero setView={setView} />}
-        {view === 'planner' && <Planner addToBag={addToBag} setView={setView} />}
-        {view === 'styleboard' && <StyleBoard addToBag={addToBag} setView={setView} />}
-        {view === 'mybag' && <MyBag myBag={myBag} setMyBag={setMyBag} removeFromBag={removeFromBag} toggleCheck={toggleCheck} estimatedTotal={estimatedTotal} handleBuy={handleBuy} setView={setView} />}
-      </div>
-      <div className="print:hidden">
-        <footer className="bg-gray-50 border-t border-gray-100 py-12 text-center text-gray-400 text-sm">&copy; 2025-2026 Cruisy Travel.</footer>
-      </div>
-      <style>{`
-        @media print {
-          @page { margin: 0; size: auto; }
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          #print-area { position: fixed; top: 0; left: 0; width: 100%; height: 100%; margin: 0; border-radius: 0; z-index: 9999; }
-          body > *:not(.flex-grow) { display: none; }
-          .flex-grow > *:not(:has(#print-area)) { display: none; }
-        }
-      `}</style>
-    </div>
-  );
-}
+export default App;
+};
