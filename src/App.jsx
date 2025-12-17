@@ -103,14 +103,16 @@ const LOGIC_ENGINE = {
   }
 };
 
-// --- MOCK DATA ---
-const CRUISE_DATA = [
+// --- MOCK DATA (FALLBACK) ---
+// This data is used if the WordPress API fails or returns no results
+const MOCK_CRUISE_DATA = [
   {
     id: 1,
     title: "7-Night Perfect Day at CocoCay",
     line: "Royal Caribbean",
     ship: "Icon of the Seas",
     destination: "Caribbean",
+    travelStyle: "family",
     date: "Dec 2025",
     price: 1199,
     image: "https://images.unsplash.com/photo-1548574505-5e239809ee19?auto=format&fit=crop&q=80&w=600",
@@ -134,6 +136,7 @@ const CRUISE_DATA = [
     line: "Virgin Voyages",
     ship: "Scarlet Lady",
     destination: "Caribbean",
+    travelStyle: "adults",
     date: "Feb 2026",
     price: 1600,
     image: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&q=80&w=600",
@@ -157,6 +160,7 @@ const CRUISE_DATA = [
     line: "Holland America Line",
     ship: "Koningsdam",
     destination: "Alaska",
+    travelStyle: "relaxing",
     date: "May 2025",
     price: 1100,
     image: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=600",
@@ -180,6 +184,7 @@ const CRUISE_DATA = [
     line: "Norwegian Cruise Line",
     ship: "Norwegian Viva",
     destination: "Mediterranean",
+    travelStyle: "family",
     date: "Jun 2025",
     price: 1450,
     image: "https://images.unsplash.com/photo-1599640845513-5c2b12a32c46?auto=format&fit=crop&q=80&w=600",
@@ -200,6 +205,7 @@ const CRUISE_DATA = [
     line: "Carnival Cruise Line",
     ship: "Carnival Conquest",
     destination: "Caribbean",
+    travelStyle: "budget",
     date: "Aug 2025",
     price: 299,
     image: "https://images.unsplash.com/photo-1506929562872-bb421503ef21?auto=format&fit=crop&q=80&w=600",
@@ -219,6 +225,7 @@ const CRUISE_DATA = [
     line: "Viking Ocean Cruises",
     ship: "Viking Mars",
     destination: "Europe",
+    travelStyle: "luxury",
     date: "Jul 2025",
     price: 5499,
     image: "https://images.unsplash.com/photo-1516484392579-38374d6b5e02?auto=format&fit=crop&q=80&w=600",
@@ -266,12 +273,22 @@ const App = () => {
 
   // --- 1. FETCH DATA FROM WORDPRESS ---
   useEffect(() => {
-    // Replace this with YOUR actual WordPress URL
+    // IMPORTANT: Replace this with your actual WordPress website URL
+    // Example: "https://cruisytravel.com/wp-json/wp/v2/cruises?per_page=100&_fields=id,title,acf"
     const WP_API_URL = "https://YOUR-WEBSITE.com/wp-json/wp/v2/cruises?per_page=100&_fields=id,title,acf";
 
     const fetchCruises = async () => {
+      // SAFETY CHECK: If the URL is still the placeholder, skip fetch and use mock data
+      if (WP_API_URL.includes("YOUR-WEBSITE.com")) {
+        console.log("WordPress API URL is set to placeholder. Using Mock Data for preview.");
+        setCruiseData(MOCK_CRUISE_DATA);
+        setLoading(false);
+        return;
+      }
+
       try {
         const response = await fetch(WP_API_URL);
+        if (!response.ok) throw new Error('Network response was not ok');
         const wpData = await response.json();
 
         // Map WordPress Data to App Structure
@@ -307,10 +324,19 @@ const App = () => {
           };
         });
 
-        setCruiseData(formattedData);
+        // If we found data, use it. Otherwise, stay with empty/loading state to trigger fallback.
+        if (formattedData.length > 0) {
+          setCruiseData(formattedData);
+        } else {
+          // If API returns empty list (no cruises published yet), use Mock Data
+          console.log("No cruises found in API, using fallback data.");
+          setCruiseData(MOCK_CRUISE_DATA); 
+        }
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching cruises:", error);
+        console.error("Error fetching cruises (using fallback):", error);
+        // Fallback to Mock Data on Error
+        setCruiseData(MOCK_CRUISE_DATA);
         setLoading(false);
       }
     };
@@ -625,6 +651,7 @@ const App = () => {
           </div>
         </div>
         <div className="mt-10 pt-8 border-t flex justify-end">
+          {/* UPDATED: Smaller button size */}
           <button onClick={() => setStep('results')} disabled={!filters.destination || !filters.style} className="px-8 py-3 rounded-xl font-brand text-lg text-white shadow-lg transition-all hover:scale-105" style={{ backgroundColor: (!filters.destination || !filters.style) ? '#ccc' : MAIN_BRAND_COLOR }}>Show Cruises <ChevronRight size={20} /></button>
         </div>
       </div>
