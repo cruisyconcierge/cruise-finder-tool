@@ -275,7 +275,7 @@ const App = () => {
   useEffect(() => {
     // IMPORTANT: Replace this with your actual WordPress website URL
     // Example: "https://cruisytravel.com/wp-json/wp/v2/cruises?per_page=100&_fields=id,title,acf"
-    const WP_API_URL = "https://YOUR-WEBSITE.com/wp-json/wp/v2/cruises?per_page=100&_fields=id,title,acf";
+    const WP_API_URL = "https://cruisytravel.com/wp-json/wp/v2/cruises?per_page=100&_fields=id,title,acf";
 
     const fetchCruises = async () => {
       // SAFETY CHECK: If the URL is still the placeholder, skip fetch and use mock data
