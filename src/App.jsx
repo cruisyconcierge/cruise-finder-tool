@@ -178,7 +178,7 @@ const App = () => {
       }
 
       try {
-        // CLEAN FETCH: Removed 'mode: cors' object entirely to prevent strict preflight checks
+        // Simplified fetch (Removed 'mode: cors' object entirely to prevent strict preflight checks)
         const response = await fetch(`${WP_API_URL}&t=${new Date().getTime()}`);
         
         if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
@@ -441,7 +441,12 @@ const App = () => {
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2 cursor-pointer" onClick={resetTool}>
           <div className="flex flex-col justify-center">
-             <a href="https://cruisytravel.com" className="flex items-center text-[10px] uppercase font-bold text-gray-400 hover:text-teal-600 transition-colors mb-0.5">
+             <a 
+               href="https://cruisytravel.com" 
+               target="_blank" 
+               rel="noopener noreferrer" 
+               className="flex items-center text-[10px] uppercase font-bold text-gray-400 hover:text-teal-600 transition-colors mb-0.5"
+             >
                <ChevronLeft size={10} className="mr-1" /> Back to Home
              </a>
              <div className="flex items-center gap-3">
