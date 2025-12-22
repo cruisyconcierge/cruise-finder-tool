@@ -20,7 +20,9 @@ import {
   Navigation,
   ShoppingBag,
   Ticket,
-  PlusCircle
+  PlusCircle,
+  AlertTriangle,
+  Home
 } from 'lucide-react';
 
 // --- FONTS & STYLES ---
@@ -104,7 +106,6 @@ const LOGIC_ENGINE = {
 };
 
 // --- MOCK DATA (FALLBACK) ---
-// This data is used if the WordPress API fails or returns no results
 const MOCK_CRUISE_DATA = [
   {
     id: 1,
@@ -129,113 +130,6 @@ const MOCK_CRUISE_DATA = [
       { name: "CocoCay Waterpark Pass", link: "#", price: "89", image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=200" },
       { name: "St. Maarten Catamaran Snorkel", link: "#", price: "120", image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&q=80&w=200" }
     ]
-  },
-  {
-    id: 2,
-    title: "8-Night Eastern Caribbean",
-    line: "Virgin Voyages",
-    ship: "Scarlet Lady",
-    destination: "Caribbean",
-    travelStyle: "adults",
-    date: "Feb 2026",
-    price: 1600,
-    image: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&q=80&w=600",
-    rating: 4.9,
-    affiliateLink: "#",
-    description: "A strictly adults-only experience that redefines luxury. With over $600 in value included (WiFi, dining, tips), this is the perfect romantic getaway with modern nightlife.",
-    ports: ["Miami, FL", "Puerto Plata", "Bimini Beach Club", "San Juan"],
-    features: ["Adults Only (18+)", "20+ Eateries Included", "Bimini Beach Club Party"],
-    amazonProducts: [
-      { name: "Elegant Evening Clutch", link: "#", price: "24.99", image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&q=80&w=200" },
-      { name: "Red Party Outfit Essentials", link: "#", price: "45.00", image: "https://images.unsplash.com/photo-1564557287817-3785e38ec1f5?auto=format&fit=crop&q=80&w=200" }
-    ],
-    excursions: [
-      { name: "San Juan Food Tour", link: "#", price: "75", image: "https://images.unsplash.com/photo-1599021406414-119777175396?auto=format&fit=crop&q=80&w=200" },
-      { name: "Waterfall Jumping in Puerto Plata", link: "#", price: "95", image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&q=80&w=200" }
-    ]
-  },
-  {
-    id: 3,
-    title: "7-Day Alaskan Glaciers",
-    line: "Holland America Line",
-    ship: "Koningsdam",
-    destination: "Alaska",
-    travelStyle: "relaxing",
-    date: "May 2025",
-    price: 1100,
-    image: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=600",
-    rating: 4.8,
-    affiliateLink: "#",
-    description: "Immerse yourself in the wild beauty of Alaska. Holland America is the leader in Alaskan cruising, offering exclusive access to Glacier Bay National Park.",
-    ports: ["Vancouver, BC", "Juneau", "Skagway", "Glacier Bay", "Ketchikan"],
-    features: ["BBC Earth Experiences", "Music Walk", "Regional Cooking Demonstrations"],
-    amazonProducts: [
-      { name: "Waterproof Binoculars", link: "#", price: "55.00", image: "https://images.unsplash.com/photo-1526487034633-90d09d3b763e?auto=format&fit=crop&q=80&w=200" },
-      { name: "Warm Fleece Jacket", link: "#", price: "39.99", image: "https://images.unsplash.com/photo-1544022613-e87ca75a784a?auto=format&fit=crop&q=80&w=200" }
-    ],
-    excursions: [
-      { name: "White Pass Railway", link: "#", price: "145", image: "https://images.unsplash.com/photo-1517411606011-275d35a3922f?auto=format&fit=crop&q=80&w=200" },
-      { name: "Whale Watching Juneau", link: "#", price: "160", image: "https://images.unsplash.com/photo-1568430462989-44163eb1752f?auto=format&fit=crop&q=80&w=200" }
-    ]
-  },
-  {
-    id: 4,
-    title: "10-Night Mediterranean",
-    line: "Norwegian Cruise Line",
-    ship: "Norwegian Viva",
-    destination: "Mediterranean",
-    travelStyle: "family",
-    date: "Jun 2025",
-    price: 1450,
-    image: "https://images.unsplash.com/photo-1599640845513-5c2b12a32c46?auto=format&fit=crop&q=80&w=600",
-    rating: 4.7,
-    affiliateLink: "#",
-    description: "Island hop through the Mediterranean in style on NCL's newest class of ships. Enjoy freestyle cruising with no fixed dining times.",
-    ports: ["Rome (Civitavecchia)", "Santorini", "Mykonos", "Corfu", "Naples"],
-    features: ["Viva Speedway Go-Karts", "Indulge Food Hall", "The Drop Slide"],
-    amazonProducts: [
-      { name: "European Power Adapter", link: "#", price: "15.99", image: "https://images.unsplash.com/photo-1621255562770-692736b4e727?auto=format&fit=crop&q=80&w=200" },
-      { name: "Comfortable Walking Shoes", link: "#", price: "60.00", image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=200" }
-    ],
-    excursions: [] 
-  },
-  {
-    id: 5,
-    title: "4-Day Bahamas Getaway",
-    line: "Carnival Cruise Line",
-    ship: "Carnival Conquest",
-    destination: "Caribbean",
-    travelStyle: "budget",
-    date: "Aug 2025",
-    price: 299,
-    image: "https://images.unsplash.com/photo-1506929562872-bb421503ef21?auto=format&fit=crop&q=80&w=600",
-    rating: 4.2,
-    affiliateLink: "#",
-    description: "The perfect quick escape. Enjoy fun in the sun, burgers by Guy Fieri, and the best comedy clubs at sea.",
-    ports: ["Miami, FL", "Nassau", "Half Moon Cay"],
-    features: ["Guy's Burger Joint", "Punchliner Comedy Club", "Serenity Adult Retreat"],
-    amazonProducts: [],
-    excursions: [
-      { name: "Atlantis Day Pass", link: "#", price: "110", image: "https://images.unsplash.com/photo-1563861826100-9cb868c06c74?auto=format&fit=crop&q=80&w=200" }
-    ]
-  },
-  {
-    id: 6,
-    title: "15-Day Viking Homelands",
-    line: "Viking Ocean Cruises",
-    ship: "Viking Mars",
-    destination: "Europe",
-    travelStyle: "luxury",
-    date: "Jul 2025",
-    price: 5499,
-    image: "https://images.unsplash.com/photo-1516484392579-38374d6b5e02?auto=format&fit=crop&q=80&w=600",
-    rating: 4.9,
-    affiliateLink: "#",
-    description: "A culturally enriching journey for the thinking person. No casinos, no kids, just pure exploration and Scandinavian design.",
-    ports: ["Stockholm", "Copenhagen", "Berlin", "Oslo", "Bergen"],
-    features: ["All Veranda Staterooms", "Shore Excursion Included in Every Port", "Nordic Spa Included"],
-    amazonProducts: [],
-    excursions: []
   }
 ];
 
@@ -256,6 +150,7 @@ const App = () => {
   // NEW: State for real data
   const [cruiseData, setCruiseData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [debugError, setDebugError] = useState(null);
 
   // Safe Mode Storage
   useEffect(() => {
@@ -274,34 +169,39 @@ const App = () => {
   // --- 1. FETCH DATA FROM WORDPRESS ---
   useEffect(() => {
     // IMPORTANT: Replace this with your actual WordPress website URL
-    // Example: "https://cruisytravel.com/wp-json/wp/v2/cruises?per_page=100&_fields=id,title,acf"
-    const WP_API_URL = "https://cruisytravel.com/wp-json/wp/v2/cruises?per_page=100&_fields=id,title,acf";
+    // We add a timestamp 't' to prevent the browser from using a cached failed request
+    const WP_API_URL = `https://cruisytravel.com/wp-json/wp/v2/cruises?per_page=100&_fields=id,title,acf&t=${new Date().getTime()}`;
 
     const fetchCruises = async () => {
       // SAFETY CHECK: If the URL is still the placeholder, skip fetch and use mock data
       if (WP_API_URL.includes("YOUR-WEBSITE.com")) {
         console.log("WordPress API URL is set to placeholder. Using Mock Data for preview.");
         setCruiseData(MOCK_CRUISE_DATA);
+        setDebugError("API URL not configured (Placeholder Active)");
         setLoading(false);
         return;
       }
 
       try {
-        const response = await fetch(WP_API_URL);
-        if (!response.ok) throw new Error('Network response was not ok');
+        const response = await fetch(WP_API_URL, {
+            mode: 'cors', // Explicitly request CORS
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
         const wpData = await response.json();
 
         // Map WordPress Data to App Structure
         const formattedData = wpData.map(post => {
           const acf = post.acf;
           
-          // Helper to parse the JSON text areas safely
           const parseJSON = (jsonString) => {
             try { return jsonString ? JSON.parse(jsonString) : []; } 
             catch (e) { return []; }
           };
 
-          // Helper to turn newlines into arrays
           const parseList = (text) => text ? text.split('\n') : [];
 
           return {
@@ -324,19 +224,22 @@ const App = () => {
           };
         });
 
-        // If we found data, use it. Otherwise, stay with empty/loading state to trigger fallback.
         if (formattedData.length > 0) {
           setCruiseData(formattedData);
+          setDebugError(null); 
         } else {
-          // If API returns empty list (no cruises published yet), use Mock Data
-          console.log("No cruises found in API, using fallback data.");
           setCruiseData(MOCK_CRUISE_DATA); 
+          setDebugError("Connected to WordPress, but found 0 Cruises. Showing Mock Data.");
         }
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching cruises (using fallback):", error);
-        // Fallback to Mock Data on Error
+        console.error("Error fetching cruises:", error);
         setCruiseData(MOCK_CRUISE_DATA);
+        // Clean up error message for user
+        const msg = error.message === 'Failed to fetch' 
+          ? 'Security Block (CORS): Please allow "*" in your WordPress CORS plugin settings.' 
+          : error.message;
+        setDebugError(msg); 
         setLoading(false);
       }
     };
@@ -553,12 +456,19 @@ const App = () => {
     <header className="no-print sticky top-0 z-50 bg-white shadow-sm border-b border-gray-100">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2 cursor-pointer" onClick={resetTool}>
-          <div className="w-9 h-9 rounded-full flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: MAIN_BRAND_COLOR }}>
-            <Anchor size={20} />
-          </div>
-          <div className="flex flex-col leading-none">
-            <span className="font-brand text-xl tracking-wide text-gray-800">Cruisy</span>
-            <span className="font-brand text-sm tracking-widest text-gray-500">Cruise Finder</span>
+          <div className="flex flex-col justify-center">
+             <a href="https://cruisytravel.com" className="flex items-center text-[10px] uppercase font-bold text-gray-400 hover:text-teal-600 transition-colors mb-0.5">
+               <ChevronLeft size={10} className="mr-1" /> Back to Home
+             </a>
+             <div className="flex items-center gap-2">
+               <img 
+                 src="https://cruisytravel.com/wp-content/uploads/2024/01/cropped-20240120_025955_0000.png" 
+                 alt="Cruisy Travel" 
+                 className="h-8 w-auto object-contain"
+               />
+               <div className="h-6 w-px bg-gray-300 mx-1"></div>
+               <span className="font-body text-xs font-bold uppercase tracking-widest text-gray-500 mt-1">Matchmaker</span>
+             </div>
           </div>
         </div>
         <button onClick={() => setIsCartOpen(true)} className="relative p-2 rounded-full hover:bg-gray-100 transition-colors">
@@ -581,6 +491,17 @@ const App = () => {
         </h1>
         <p className="font-body text-gray-500 text-lg font-medium">Select a destination and your vibe to see curated matches.</p>
       </div>
+      {debugError && (
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-8 mx-auto max-w-2xl rounded-r shadow-sm">
+          <div className="flex items-center gap-2 mb-1">
+            <AlertTriangle className="w-5 h-5" />
+            <p className="font-bold">Connection Issue</p>
+          </div>
+          <p className="text-sm">{debugError}</p>
+          <p className="text-xs mt-2 opacity-75">Common fixes: Install "WP CORS" plugin, or check the URL in App.jsx.</p>
+        </div>
+      )}
+
       <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 md:p-10">
         <div className="grid md:grid-cols-2 gap-10">
           
@@ -651,8 +572,18 @@ const App = () => {
           </div>
         </div>
         <div className="mt-10 pt-8 border-t flex justify-end">
-          {/* UPDATED: Smaller button size */}
-          <button onClick={() => setStep('results')} disabled={!filters.destination || !filters.style} className="px-8 py-3 rounded-xl font-brand text-lg text-white shadow-lg transition-all hover:scale-105" style={{ backgroundColor: (!filters.destination || !filters.style) ? '#ccc' : MAIN_BRAND_COLOR }}>Show Cruises <ChevronRight size={20} /></button>
+          {/* UPDATED: Redesigned Show Cruises Button (Gradient & Shadow) */}
+          <button 
+            onClick={() => setStep('results')} 
+            disabled={!filters.destination || !filters.style} 
+            className="px-10 py-4 rounded-xl font-brand text-lg text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-95 flex items-center gap-2" 
+            style={{ 
+              background: (!filters.destination || !filters.style) ? '#ccc' : `linear-gradient(135deg, ${MAIN_BRAND_COLOR}, #2a8a9c)`,
+              cursor: (!filters.destination || !filters.style) ? 'not-allowed' : 'pointer'
+            }}
+          >
+            Show Cruises <ChevronRight size={20} />
+          </button>
         </div>
       </div>
     </div>
