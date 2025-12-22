@@ -147,12 +147,10 @@ const App = () => {
   const [filteredCruises, setFilteredCruises] = useState([]);
   const [selectedCruise, setSelectedCruise] = useState(null);
   
-  // NEW: State for real data
   const [cruiseData, setCruiseData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [debugError, setDebugError] = useState(null);
 
-  // Safe Mode Storage
   useEffect(() => {
     try {
       const saved = localStorage.getItem('cruiseCartV6');
@@ -168,40 +166,30 @@ const App = () => {
 
   // --- 1. FETCH DATA FROM WORDPRESS ---
   useEffect(() => {
-    // IMPORTANT: Replace this with your actual WordPress website URL
-    // We add a timestamp 't' to prevent the browser from using a cached failed request
-    const WP_API_URL = `https://cruisytravel.com/wp-json/wp/v2/cruises?per_page=100&_fields=id,title,acf&t=${new Date().getTime()}`;
+    // IMPORTANT: Replace with your actual WordPress website URL
+    const WP_API_URL = "https://cruisytravel.com/wp-json/wp/v2/cruises?per_page=100&_fields=id,title,acf";
 
     const fetchCruises = async () => {
-      // SAFETY CHECK: If the URL is still the placeholder, skip fetch and use mock data
       if (WP_API_URL.includes("YOUR-WEBSITE.com")) {
-        console.log("WordPress API URL is set to placeholder. Using Mock Data for preview.");
         setCruiseData(MOCK_CRUISE_DATA);
-        setDebugError("API URL not configured (Placeholder Active)");
+        setDebugError("API URL not configured");
         setLoading(false);
         return;
       }
 
       try {
-        const response = await fetch(WP_API_URL, {
-            mode: 'cors', // Explicitly request CORS
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
+        // CLEAN FETCH: Removed 'mode: cors' object entirely to prevent strict preflight checks
+        const response = await fetch(`${WP_API_URL}&t=${new Date().getTime()}`);
         
         if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
         const wpData = await response.json();
 
-        // Map WordPress Data to App Structure
         const formattedData = wpData.map(post => {
           const acf = post.acf;
-          
           const parseJSON = (jsonString) => {
             try { return jsonString ? JSON.parse(jsonString) : []; } 
             catch (e) { return []; }
           };
-
           const parseList = (text) => text ? text.split('\n') : [];
 
           return {
@@ -209,7 +197,7 @@ const App = () => {
             title: post.title.rendered,
             line: acf.cruise_line,
             ship: acf.ship_name,
-            destination: acf.destination, // Matches 'Caribbean', etc.
+            destination: acf.destination,
             travelStyle: acf.travel_style, 
             date: "Check Dates", 
             price: acf.price,
@@ -235,9 +223,8 @@ const App = () => {
       } catch (error) {
         console.error("Error fetching cruises:", error);
         setCruiseData(MOCK_CRUISE_DATA);
-        // Clean up error message for user
         const msg = error.message === 'Failed to fetch' 
-          ? 'Security Block (CORS): Please allow "*" in your WordPress CORS plugin settings.' 
+          ? 'Security Block (CORS): Your WordPress site is blocking this App. Please add the Code Snippet.' 
           : error.message;
         setDebugError(msg); 
         setLoading(false);
@@ -249,17 +236,14 @@ const App = () => {
 
   // --- LOGIC ENGINE ---
   useEffect(() => {
-    // Wait for data to load
     if (loading) return;
 
     let results = cruiseData;
 
-    // 1. Destination Filter
     if (filters.destination) {
       results = results.filter(c => c.destination === filters.destination);
     }
     
-    // 2. Style Filter
     if (filters.style) {
       results = results.filter(c => c.travelStyle === filters.style);
     }
@@ -460,14 +444,26 @@ const App = () => {
              <a href="https://cruisytravel.com" className="flex items-center text-[10px] uppercase font-bold text-gray-400 hover:text-teal-600 transition-colors mb-0.5">
                <ChevronLeft size={10} className="mr-1" /> Back to Home
              </a>
-             <div className="flex items-center gap-2">
+             <div className="flex items-center gap-3">
                <img 
                  src="https://cruisytravel.com/wp-content/uploads/2024/01/cropped-20240120_025955_0000.png" 
                  alt="Cruisy Travel" 
-                 className="h-8 w-auto object-contain"
+                 className="h-10 w-auto object-contain"
                />
-               <div className="h-6 w-px bg-gray-300 mx-1"></div>
-               <span className="font-body text-xs font-bold uppercase tracking-widest text-gray-500 mt-1">Matchmaker</span>
+               <div className="hidden md:flex items-center gap-2">
+                   <div className="font-brand text-2xl tracking-wide leading-none">
+                     <span className="text-gray-800">Cruisy</span><span style={{ color: MAIN_BRAND_COLOR }}>Travel</span>
+                   </div>
+                   <div className="h-6 w-px bg-gray-300 mx-1"></div>
+                   <span className="font-body text-sm font-bold uppercase tracking-widest text-gray-500 pt-1">Find Your Cruise</span>
+               </div>
+               {/* Mobile view */}
+               <div className="md:hidden flex flex-col">
+                   <div className="font-brand text-lg leading-none">
+                     <span className="text-gray-800">Cruisy</span><span style={{ color: MAIN_BRAND_COLOR }}>Travel</span>
+                   </div>
+                   <span className="text-[10px] uppercase tracking-wider text-gray-500">Find Your Cruise</span>
+               </div>
              </div>
           </div>
         </div>
