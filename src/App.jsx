@@ -22,7 +22,10 @@ import {
   Ticket,
   PlusCircle,
   AlertTriangle,
-  Home
+  LogOut,
+  Compass,
+  Filter,
+  Palmtree
 } from 'lucide-react';
 
 // --- FONTS & STYLES ---
@@ -43,11 +46,30 @@ const GlobalStyles = () => (
       }
       .print-only { display: none; }
       
-      /* Checkbox styles - Updated to use Brand Teal */
-      .custom-checkbox:checked + div {
-         background-color: #34a4b8;
-         border-color: #34a4b8;
-         color: white;
+      .scrollbar-hide::-webkit-scrollbar { display: none; }
+      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+      /* Nautical Porthole Effect */
+      .porthole {
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 0 0 4px #c2b280, 0 10px 20px rgba(0,0,0,0.5);
+        border-radius: 50%;
+        overflow: hidden;
+        transition: transform 0.3s ease;
+      }
+      .porthole:hover {
+        transform: scale(1.02);
+      }
+      
+      /* Subtle Ocean Animation */
+      @keyframes ocean {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      .bg-ocean {
+        background: linear-gradient(270deg, #0f172a, #1e293b, #0f172a);
+        background-size: 200% 200%;
+        animation: ocean 30s ease infinite;
       }
     `}
   </style>
@@ -76,36 +98,14 @@ const LINE_COLORS = {
   "Viking Ocean Cruises": "#98002E",
 };
 
-// --- LOGIC ENGINE ---
 const LOGIC_ENGINE = {
-  family: {
-    label: "Family Fun",
-    description: "Slides, kids clubs, active",
-    allowedLines: ["Royal Caribbean", "Disney Cruise Line", "Norwegian Cruise Line", "MSC Cruises"]
-  },
-  adults: {
-    label: "Adults Only",
-    description: "Romantic, nightlife, 18+",
-    allowedLines: ["Virgin Voyages", "Viking Ocean Cruises", "Saga Cruises"]
-  },
-  relaxing: {
-    label: "Relaxing & Scenic",
-    description: "Quiet, nature, premium",
-    allowedLines: ["Holland America Line", "Princess Cruises", "Celebrity Cruises"]
-  },
-  luxury: {
-    label: "Luxury & Culture",
-    description: "All-inclusive, smaller ships",
-    allowedLines: ["Regent Seven Seas Cruises", "Explora Journeys", "Oceania Cruises", "Windstar Cruises", "Cunard Line"]
-  },
-  budget: {
-    label: "Best Value",
-    description: "Great deals, quick getaways",
-    allowedLines: ["Carnival Cruise Line", "MSC Cruises", "Costa Cruises"]
-  }
+  family: { label: "Family Fun", icon: Users, desc: "Action & Kids" },
+  adults: { label: "Adults Only", icon: Wine, desc: "Romance & Nightlife" },
+  relaxing: { label: "Relaxing", icon: Sun, desc: "Quiet & Scenic" },
+  luxury: { label: "Luxury", icon: Star, desc: "All-Inclusive" },
+  budget: { label: "Best Value", icon: DollarSign, desc: "Deals" }
 };
 
-// --- MOCK DATA (FALLBACK) ---
 const MOCK_CRUISE_DATA = [
   {
     id: 1,
@@ -122,31 +122,22 @@ const MOCK_CRUISE_DATA = [
     description: "Experience the ultimate family vacation on the world's largest cruise ship. Featuring the largest waterpark at sea, 7 pools, and the dedicated Surfside neighborhood for young families.",
     ports: ["Miami, FL", "Perfect Day at CocoCay", "St. Thomas", "St. Maarten"],
     features: ["Category 6 Waterpark", "AquaDome", "Surfside Family Neighborhood"],
-    amazonProducts: [
-      { name: "Waterproof Phone Pouch", link: "#", price: "9.99", image: "https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?auto=format&fit=crop&q=80&w=200" },
-      { name: "Reef Safe Sunscreen", link: "#", price: "14.50", image: "https://images.unsplash.com/photo-1526947425960-945c6e72858f?auto=format&fit=crop&q=80&w=200" }
-    ],
-    excursions: [
-      { name: "CocoCay Waterpark Pass", link: "#", price: "89", image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=200" },
-      { name: "St. Maarten Catamaran Snorkel", link: "#", price: "120", image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&q=80&w=200" }
-    ]
+    amazonProducts: [], 
+    excursions: [] 
   }
 ];
 
-// --- EXTRA SUGGESTIONS (NOT IN CART YET) ---
 const SUGGESTED_ESSENTIALS = [
-  { id: 'sugg-1', name: "Universal Travel Adapter", price: "19.99", link: "#", image: "https://images.unsplash.com/photo-1585338107529-13afc5f02586?auto=format&fit=crop&q=80&w=150" },
-  { id: 'sugg-2', name: "Magnetic Cabin Hooks", price: "12.50", link: "#", image: "https://images.unsplash.com/photo-1624823183492-3599690f3319?auto=format&fit=crop&q=80&w=150" }
+  { id: 'sugg-1', name: "Magnetic Cruise Ship Fan", price: "19.99", link: "https://amzn.to/4jmVuc8", image: "https://m.media-amazon.com/images/I/71tXcZksPJL._AC_SL1500_.jpg" },
+  { id: 'sugg-2', name: "Large Waterproof Phone Pouch (2 Pack)", price: "9.99", link: "https://amzn.to/3NufGNh", image: "https://m.media-amazon.com/images/I/71L7M0vCvXL._AC_SX679_.jpg" }
 ];
 
 const App = () => {
-  const [step, setStep] = useState('wizard');
   const [filters, setFilters] = useState({ destination: '', style: '' });
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [filteredCruises, setFilteredCruises] = useState([]);
   const [selectedCruise, setSelectedCruise] = useState(null);
-  
   const [cruiseData, setCruiseData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [debugError, setDebugError] = useState(null);
@@ -164,9 +155,7 @@ const App = () => {
     } catch (e) {}
   }, [cart]);
 
-  // --- 1. FETCH DATA FROM WORDPRESS ---
   useEffect(() => {
-    // IMPORTANT: Replace with your actual WordPress website URL
     const WP_API_URL = "https://cruisytravel.com/wp-json/wp/v2/cruises?per_page=100&_fields=id,title,acf";
 
     const fetchCruises = async () => {
@@ -176,22 +165,14 @@ const App = () => {
         setLoading(false);
         return;
       }
-
       try {
-        // Simplified fetch (Removed 'mode: cors' object entirely to prevent strict preflight checks)
         const response = await fetch(`${WP_API_URL}&t=${new Date().getTime()}`);
-        
         if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
         const wpData = await response.json();
-
         const formattedData = wpData.map(post => {
           const acf = post.acf;
-          const parseJSON = (jsonString) => {
-            try { return jsonString ? JSON.parse(jsonString) : []; } 
-            catch (e) { return []; }
-          };
+          const parseJSON = (str) => { try { return str ? JSON.parse(str) : []; } catch (e) { return []; }};
           const parseList = (text) => text ? text.split('\n') : [];
-
           return {
             id: post.id,
             title: post.title.rendered,
@@ -211,50 +192,31 @@ const App = () => {
             excursions: parseJSON(acf.excursions_json)
           };
         });
-
-        if (formattedData.length > 0) {
-          setCruiseData(formattedData);
-          setDebugError(null); 
-        } else {
-          setCruiseData(MOCK_CRUISE_DATA); 
-          setDebugError("Connected to WordPress, but found 0 Cruises. Showing Mock Data.");
-        }
+        setCruiseData(formattedData.length > 0 ? formattedData : MOCK_CRUISE_DATA);
+        if (formattedData.length === 0) setDebugError("No cruises found. Using Mock Data.");
         setLoading(false);
       } catch (error) {
         console.error("Error fetching cruises:", error);
         setCruiseData(MOCK_CRUISE_DATA);
-        const msg = error.message === 'Failed to fetch' 
-          ? 'Security Block (CORS): Your WordPress site is blocking this App. Please add the Code Snippet.' 
-          : error.message;
-        setDebugError(msg); 
+        setDebugError(error.message); 
         setLoading(false);
       }
     };
-
     fetchCruises();
   }, []);
 
-  // --- LOGIC ENGINE ---
   useEffect(() => {
     if (loading) return;
-
     let results = cruiseData;
-
-    if (filters.destination) {
-      results = results.filter(c => c.destination === filters.destination);
-    }
-    
-    if (filters.style) {
-      results = results.filter(c => c.travelStyle === filters.style);
-    }
-
+    if (filters.destination) results = results.filter(c => c.destination === filters.destination);
+    if (filters.style) results = results.filter(c => c.travelStyle === filters.style);
     setFilteredCruises(results);
   }, [filters, cruiseData, loading]);
 
-  const addToCart = (item, type, parentContext = '') => {
+  const addToCart = (item, type) => {
     const itemId = item.id || `${type}-${item.name}-${Date.now()}`;
     if (!cart.find(c => (c.title === item.title || c.name === item.name) && c.type === type)) {
-      setCart([...cart, { ...item, id: itemId, type, parentContext, checked: false }]);
+      setCart([...cart, { ...item, id: itemId, type, checked: false }]);
     }
     setIsCartOpen(true);
   };
@@ -265,32 +227,12 @@ const App = () => {
     setCart(cart.map(item => item.id === id ? { ...item, checked: !item.checked } : item));
   };
 
-  const resetTool = () => {
-    setStep('wizard');
-    setFilters({ destination: '', style: '' });
-  };
+  const resetFilters = () => setFilters({ destination: '', style: '' });
 
   const handleEmailShare = () => {
     const subject = encodeURIComponent("My Cruisy Vacation Checklist");
     let bodyText = "My Vacation Plan:\n\n";
-    
-    const cruises = cart.filter(i => i.type === 'cruise');
-    const products = cart.filter(i => i.type === 'product');
-    const activities = cart.filter(i => i.type === 'activity');
-
-    if (cruises.length) {
-      bodyText += "--- CRUISES ---\n";
-      cruises.forEach(i => bodyText += `[${i.checked ? 'X' : ' '}] ${i.title} (${i.line}) - $${i.price}\nLink: ${i.affiliateLink}\n\n`);
-    }
-    if (products.length) {
-      bodyText += "--- GEAR TO BUY ---\n";
-      products.forEach(i => bodyText += `[${i.checked ? 'X' : ' '}] ${i.name} - $${i.price}\nLink: ${i.link}\n\n`);
-    }
-    if (activities.length) {
-      bodyText += "--- ACTIVITIES ---\n";
-      activities.forEach(i => bodyText += `[${i.checked ? 'X' : ' '}] ${i.name} - $${i.price}\nLink: ${i.link}\n\n`);
-    }
-
+    cart.forEach(item => bodyText += `[${item.checked ? 'X' : ' '}] ${item.title || item.name} - ${item.affiliateLink || item.link}\n`);
     window.location.href = `mailto:?subject=${subject}&body=${encodeURIComponent(bodyText)}`;
   };
 
@@ -298,95 +240,63 @@ const App = () => {
 
   const CruiseDetailsModal = () => {
     if (!selectedCruise) return null;
-    
     const color = LINE_COLORS[selectedCruise.line] || MAIN_BRAND_COLOR;
-    const hasAmazon = selectedCruise.amazonProducts && selectedCruise.amazonProducts.length > 0;
-    const hasExcursions = selectedCruise.excursions && selectedCruise.excursions.length > 0;
-
     return (
       <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedCruise(null)} />
-        <div className="relative bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-200">
-          
-          <div className="relative h-64">
-            <img src={selectedCruise.image} className="w-full h-full object-cover" alt={selectedCruise.title} />
-            <button onClick={() => setSelectedCruise(null)} className="absolute top-4 right-4 bg-white/90 p-2 rounded-full shadow-lg hover:bg-white text-gray-800 transition-all"><X size={24} /></button>
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 pt-20">
-              <span className="bg-white/20 backdrop-blur-md text-white px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider mb-2 inline-block border border-white/30">{selectedCruise.line}</span>
-              <h2 className="text-3xl font-brand text-white leading-tight">{selectedCruise.title}</h2>
+        <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setSelectedCruise(null)} />
+        <div className="relative bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border-4 border-slate-700">
+          <div className="relative h-64 bg-slate-900">
+            <img src={selectedCruise.image} className="w-full h-full object-cover opacity-80" alt={selectedCruise.title} />
+            <button onClick={() => setSelectedCruise(null)} className="absolute top-4 right-4 bg-black/50 p-2 rounded-full text-white hover:bg-black transition-all"><X size={20} /></button>
+            <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-slate-900 to-transparent">
+              <h2 className="text-2xl font-brand text-white">{selectedCruise.title}</h2>
+              <p className="text-slate-300 text-sm font-bold uppercase tracking-wider">{selectedCruise.line} | {selectedCruise.ship}</p>
             </div>
           </div>
-
-          <div className="p-6 md:p-8 space-y-8">
-            <div className="grid grid-cols-3 gap-4 border-b border-gray-100 pb-6">
-              <div className="text-center"><Ship className="w-6 h-6 mx-auto mb-2 text-gray-400" /><p className="text-xs text-gray-400 font-bold uppercase">Ship</p><p className="font-bold text-gray-800 text-sm">{selectedCruise.ship}</p></div>
-              <div className="text-center border-l border-gray-100"><Calendar className="w-6 h-6 mx-auto mb-2 text-gray-400" /><p className="text-xs text-gray-400 font-bold uppercase">Date</p><p className="font-bold text-gray-800 text-sm">{selectedCruise.date}</p></div>
-              <div className="text-center border-l border-gray-100"><Star className="w-6 h-6 mx-auto mb-2 text-yellow-400 fill-current" /><p className="text-xs text-gray-400 font-bold uppercase">Rating</p><p className="font-bold text-gray-800 text-sm">{selectedCruise.rating}/5</p></div>
-            </div>
-
-            <div>
-              <h3 className="font-brand text-xl text-gray-800 mb-3 flex items-center gap-2"><Info size={20} style={{ color: color }} /> About this Sailing</h3>
-              <p className="font-body text-gray-600 leading-relaxed">{selectedCruise.description}</p>
-            </div>
-
-            <div>
-              <h3 className="font-brand text-xl text-gray-800 mb-3 flex items-center gap-2"><Navigation size={20} style={{ color: color }} /> Ports of Call</h3>
-              <div className="flex flex-wrap gap-2">
-                {selectedCruise.ports ? selectedCruise.ports.map((port, idx) => (<span key={idx} className="px-3 py-1.5 bg-gray-100 rounded-lg text-sm font-medium text-gray-700 flex items-center"><MapPin size={12} className="mr-1 opacity-50" /> {port}</span>)) : null}
+          <div className="p-6 space-y-6">
+            <p className="font-body text-slate-600 leading-relaxed">{selectedCruise.description}</p>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h4 className="font-brand text-sm text-slate-800 mb-2 flex items-center gap-1"><Navigation size={14} className="text-teal-500"/> Itinerary</h4>
+                <ul className="text-sm text-slate-500 space-y-1">
+                  {selectedCruise.ports?.map((p,i) => <li key={i}>• {p}</li>)}
+                </ul>
+              </div>
+              <div>
+                 <h4 className="font-brand text-sm text-slate-800 mb-2 flex items-center gap-1"><Star size={14} className="text-orange-500"/> Features</h4>
+                 <ul className="text-sm text-slate-500 space-y-1">
+                   {selectedCruise.features?.map((f,i) => <li key={i}>• {f}</li>)}
+                 </ul>
               </div>
             </div>
 
-            {hasExcursions && (
-              <div className="bg-orange-50 rounded-2xl p-5 border border-orange-100">
-                <h3 className="font-brand text-xl text-gray-800 mb-3 flex items-center gap-2"><Ticket size={20} className="text-orange-500" /> Top Shore Excursions</h3>
+            {/* Dynamic Affiliates in Modal */}
+            {(selectedCruise.excursions?.length > 0 || selectedCruise.amazonProducts?.length > 0) && (
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <h4 className="font-brand text-sm text-slate-800 mb-3">Add to your trip</h4>
                 <div className="space-y-3">
-                  {selectedCruise.excursions.map((exc, idx) => (
-                    <div key={idx} className="flex items-center justify-between bg-white p-3 rounded-xl border border-orange-100 shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <img src={exc.image} className="w-10 h-10 rounded-md object-cover" />
-                        <div className="flex-1">
-                          <div className="font-medium text-gray-700">{exc.name}</div>
-                          <div className="text-xs text-gray-400">From ${exc.price}</div>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => addToCart(exc, 'activity', selectedCruise.title)} className="p-2 bg-gray-100 hover:bg-orange-100 text-gray-500 hover:text-orange-600 rounded-lg transition-colors" title="Save to List"><Heart size={18} /></button>
-                        <a href={exc.link} target="_blank" rel="noopener noreferrer" className="p-2 bg-orange-100 text-orange-600 rounded-lg hover:bg-orange-200 font-bold text-xs flex items-center">Book <ChevronRight size={14} /></a>
-                      </div>
+                  {selectedCruise.excursions?.map((exc, i) => (
+                    <div key={i} className="flex justify-between items-center text-sm">
+                      <span className="truncate pr-2 font-medium">{exc.name} <span className="text-slate-400">(${exc.price})</span></span>
+                      <button onClick={() => addToCart(exc, 'activity')} className="text-orange-500 hover:text-orange-600 font-bold text-xs border border-orange-200 px-2 py-1 rounded bg-white">Add Activity</button>
+                    </div>
+                  ))}
+                  {selectedCruise.amazonProducts?.map((prod, i) => (
+                    <div key={i} className="flex justify-between items-center text-sm">
+                      <span className="truncate pr-2 font-medium">{prod.name} <span className="text-slate-400">(${prod.price})</span></span>
+                      <button onClick={() => addToCart(prod, 'product')} className="text-teal-600 hover:text-teal-700 font-bold text-xs border border-teal-200 px-2 py-1 rounded bg-white">Add Gear</button>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {hasAmazon && (
-              <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100">
-                <h3 className="font-brand text-xl text-gray-800 mb-3 flex items-center gap-2"><ShoppingBag size={20} className="text-gray-600" /> Pack Like a Pro</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {selectedCruise.amazonProducts.map((prod, idx) => (
-                    <div key={idx} className="bg-white p-3 rounded-xl border border-gray-200 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <img src={prod.image} className="w-10 h-10 rounded-md object-cover flex-shrink-0" />
-                        <div className="min-w-0">
-                          <div className="font-medium text-sm text-gray-800 truncate">{prod.name}</div>
-                          <div className="text-xs text-teal-600 font-bold">${prod.price}</div>
-                        </div>
-                      </div>
-                      <div className="flex gap-1">
-                        <button onClick={() => addToCart(prod, 'product', selectedCruise.title)} className="p-1.5 bg-gray-50 hover:bg-teal-50 rounded text-gray-400 hover:text-teal-500"><Heart size={16} /></button>
-                        <a href={prod.link} target="_blank" rel="noopener noreferrer" className="p-1.5 bg-gray-100 hover:bg-gray-200 rounded text-gray-600"><ShoppingBag size={16} /></a>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="pt-6 border-t border-gray-100 flex items-center justify-between sticky bottom-0 bg-white pb-2">
-               <div><p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Starting From</p><p className="font-brand text-3xl" style={{ color: color }}>${selectedCruise.price}</p></div>
-               <div className="flex gap-3">
-                 <button onClick={() => addToCart(selectedCruise, 'cruise')} className="px-6 py-2 rounded-xl border-2 font-body font-bold text-base transition-all hover:bg-gray-50" style={{ borderColor: color, color: color }}>Save</button>
-                 <a href={selectedCruise.affiliateLink} target="_blank" rel="noopener noreferrer" className="px-6 py-2 rounded-xl text-white font-body font-bold text-base shadow-md hover:shadow-xl hover:-translate-y-1 transition-all" style={{ backgroundColor: color }}>View Deal</a>
+            <div className="flex justify-between items-center pt-4 border-t border-slate-100">
+               <div className="text-2xl font-brand text-slate-800">${selectedCruise.price}</div>
+               <div className="flex gap-2">
+                 <button onClick={() => addToCart(selectedCruise, 'cruise')} className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-50">Save</button>
+                 <a href={selectedCruise.affiliateLink} target="_blank" rel="noopener noreferrer" className="px-6 py-2 bg-teal-600 text-white rounded-lg text-sm font-bold hover:bg-teal-700 shadow-md">View Deal</a>
                </div>
             </div>
           </div>
@@ -396,353 +306,221 @@ const App = () => {
   };
 
   const PrintableItinerary = () => (
-    <div className="print-only p-8 max-w-3xl mx-auto font-body text-black">
-      <div className="flex items-center gap-4 mb-8 border-b-2 pb-6 border-gray-800">
-        <div className="w-12 h-12 rounded-full flex items-center justify-center bg-gray-800 text-white">
-          <Anchor size={24} />
-        </div>
-        <div>
-          <h1 className="font-brand text-4xl">Cruisy</h1>
-          <p className="uppercase tracking-widest text-sm">Vacation Checklist</p>
-        </div>
-      </div>
-
-      <div className="space-y-8">
-        {[
-          { type: 'cruise', title: 'Cruises to Book' }, 
-          { type: 'activity', title: 'Activities & Excursions' }, 
-          { type: 'product', title: 'Packing List' }
-        ].map(section => {
-          const items = cart.filter(c => c.type === section.type);
-          if (items.length === 0) return null;
-          return (
-            <div key={section.type}>
-              <h3 className="font-brand text-xl border-b pb-2 mb-4 uppercase">{section.title}</h3>
-              <div className="space-y-4">
-                {items.map(item => (
-                  <div key={item.id} className="flex gap-4 items-center">
-                    <div className="w-6 h-6 border-2 border-gray-300 rounded flex items-center justify-center"></div>
-                    <div className="flex-1">
-                      <div className="font-bold text-lg">{item.title || item.name}</div>
-                      <div className="text-sm text-gray-500">{item.line || item.parentContext} - ${item.price}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  );
-
-  const Header = () => (
-    <header className="no-print sticky top-0 z-50 bg-white shadow-sm border-b border-gray-100">
-      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={resetTool}>
-          <div className="flex flex-col justify-center">
-             <a 
-               href="https://cruisytravel.com" 
-               target="_blank" 
-               rel="noopener noreferrer" 
-               className="flex items-center text-[10px] uppercase font-bold text-gray-400 hover:text-teal-600 transition-colors mb-0.5"
-             >
-               <ChevronLeft size={10} className="mr-1" /> Back to Home
-             </a>
-             <div className="flex items-center gap-3">
-               <img 
-                 src="https://cruisytravel.com/wp-content/uploads/2024/01/cropped-20240120_025955_0000.png" 
-                 alt="Cruisy Travel" 
-                 className="h-10 w-auto object-contain"
-               />
-               <div className="hidden md:flex items-center gap-2">
-                   <div className="font-brand text-2xl tracking-wide leading-none">
-                     <span className="text-gray-800">Cruisy</span><span style={{ color: MAIN_BRAND_COLOR }}>Travel</span>
-                   </div>
-                   <div className="h-6 w-px bg-gray-300 mx-1"></div>
-                   <span className="font-body text-sm font-bold uppercase tracking-widest text-gray-500 pt-1">Find Your Cruise</span>
-               </div>
-               {/* Mobile view */}
-               <div className="md:hidden flex flex-col">
-                   <div className="font-brand text-lg leading-none">
-                     <span className="text-gray-800">Cruisy</span><span style={{ color: MAIN_BRAND_COLOR }}>Travel</span>
-                   </div>
-                   <span className="text-[10px] uppercase tracking-wider text-gray-500">Find Your Cruise</span>
-               </div>
-             </div>
-          </div>
-        </div>
-        <button onClick={() => setIsCartOpen(true)} className="relative p-2 rounded-full hover:bg-gray-100 transition-colors">
-          <div className="relative">
-            <Heart className={`w-7 h-7 ${cart.length > 0 ? 'fill-current' : ''}`} style={{ color: MAIN_BRAND_COLOR }} />
-            {cart.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full font-body">{cart.length}</span>
-            )}
-          </div>
-        </button>
-      </div>
-    </header>
-  );
-
-  const Wizard = () => (
-    <div className="no-print max-w-4xl mx-auto px-4 py-12">
-      <div className="text-center mb-10">
-        <h1 className="font-brand text-4xl md:text-5xl text-gray-900 mb-4">
-          Find Your Perfect <span style={{ color: MAIN_BRAND_COLOR }}>Cruise</span>
-        </h1>
-        <p className="font-body text-gray-500 text-lg font-medium">Select a destination and your vibe to see curated matches.</p>
-      </div>
-      {debugError && (
-        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-8 mx-auto max-w-2xl rounded-r shadow-sm">
-          <div className="flex items-center gap-2 mb-1">
-            <AlertTriangle className="w-5 h-5" />
-            <p className="font-bold">Connection Issue</p>
-          </div>
-          <p className="text-sm">{debugError}</p>
-          <p className="text-xs mt-2 opacity-75">Common fixes: Install "WP CORS" plugin, or check the URL in App.jsx.</p>
-        </div>
-      )}
-
-      <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 md:p-10">
-        <div className="grid md:grid-cols-2 gap-10">
-          
-          <div className="space-y-5">
-            <label className="flex items-center gap-2 font-brand text-gray-700 text-xl"><MapPin className="w-6 h-6" style={{ color: MAIN_BRAND_COLOR }} /> Where to?</label>
-            <div className="grid grid-cols-2 gap-3">
-               {['Caribbean', 'Mediterranean', 'Alaska', 'Europe', 'Transatlantic'].map(dest => {
-                const destColors = {
-                  'Caribbean': 'border-cyan-300 hover:bg-cyan-50 text-cyan-800',
-                  'Mediterranean': 'border-blue-300 hover:bg-blue-50 text-blue-800',
-                  'Alaska': 'border-indigo-300 hover:bg-indigo-50 text-indigo-800',
-                  'Europe': 'border-rose-300 hover:bg-rose-50 text-rose-800',
-                  'Transatlantic': 'border-violet-300 hover:bg-violet-50 text-violet-800',
-                };
-                const colorClass = destColors[dest];
-                const isSelected = filters.destination === dest;
-                const activeStyles = {
-                  'Caribbean': { bg: '#ecfeff', border: '#22d3ee' }, 
-                  'Mediterranean': { bg: '#eff6ff', border: '#60a5fa' }, 
-                  'Alaska': { bg: '#eef2ff', border: '#818cf8' }, 
-                  'Europe': { bg: '#fff1f2', border: '#fb7185' }, 
-                  'Transatlantic': { bg: '#f5f3ff', border: '#a78bfa' }, 
-                };
-                const active = activeStyles[dest];
-
-                return (
-                  <button
-                    key={dest}
-                    onClick={() => setFilters({ ...filters, destination: dest })}
-                    className={`p-4 rounded-2xl border-2 text-left transition-all font-body font-medium ${colorClass} ${isSelected ? 'shadow-sm' : 'bg-white'}`}
-                    style={{ backgroundColor: isSelected ? active.bg : '', borderColor: isSelected ? active.border : '', borderWidth: '2px' }}
-                  >
-                    <span className="block">{dest}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          <div className="space-y-5">
-            <label className="flex items-center gap-2 font-brand text-gray-700 text-xl"><Sun className="w-6 h-6" style={{ color: MAIN_BRAND_COLOR }} /> What's the Vibe?</label>
-            <div className="space-y-3">
-              {Object.entries(LOGIC_ENGINE).map(([key, data]) => {
-                 const icons = { family: Users, adults: Wine, relaxing: Sun, luxury: Star, budget: DollarSign };
-                 const Icon = icons[key];
-                 const isSelected = filters.style === key;
-                 const vibeColors = {
-                   family: "bg-sky-100 text-sky-600",
-                   adults: "bg-rose-100 text-rose-600",
-                   relaxing: "bg-emerald-100 text-emerald-600",
-                   luxury: "bg-violet-100 text-violet-600",
-                   budget: "bg-amber-100 text-amber-600"
-                 };
-                 return (
-                  <button key={key} onClick={() => setFilters({ ...filters, style: key })} className={`w-full p-3 rounded-2xl border-2 flex items-center gap-4 transition-all font-body group hover:bg-gray-50 ${isSelected ? 'shadow-sm' : 'bg-white'}`} style={{ borderColor: isSelected ? MAIN_BRAND_COLOR : '#f3f4f6', backgroundColor: isSelected ? '#f0fdff' : '' }}>
-                    <div className={`p-3 rounded-xl transition-colors ${isSelected ? 'bg-teal-100 text-teal-700' : vibeColors[key]}`}>
-                      <Icon size={24} strokeWidth={2.5} />
-                    </div>
-                    <div className="text-left">
-                      <div className="font-bold text-gray-800 text-lg group-hover:text-gray-900">{data.label}</div>
-                      <div className="text-xs text-gray-500 font-medium">{data.description}</div>
-                    </div>
-                    {isSelected && <Check className="ml-auto w-6 h-6" style={{ color: MAIN_BRAND_COLOR }} />}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-        <div className="mt-10 pt-8 border-t flex justify-end">
-          {/* UPDATED: Redesigned Show Cruises Button (Gradient & Shadow) */}
-          <button 
-            onClick={() => setStep('results')} 
-            disabled={!filters.destination || !filters.style} 
-            className="px-10 py-4 rounded-xl font-brand text-lg text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-95 flex items-center gap-2" 
-            style={{ 
-              background: (!filters.destination || !filters.style) ? '#ccc' : `linear-gradient(135deg, ${MAIN_BRAND_COLOR}, #2a8a9c)`,
-              cursor: (!filters.destination || !filters.style) ? 'not-allowed' : 'pointer'
-            }}
-          >
-            Show Cruises <ChevronRight size={20} />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const Results = () => (
-    <div className="no-print max-w-6xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <button onClick={() => setStep('wizard')} className="font-body text-gray-500 hover:text-gray-800 flex items-center gap-1 mb-4 font-bold text-sm"><ChevronLeft size={16} /> Edit Filters</button>
-        <h2 className="font-brand text-3xl text-gray-800">Recommended Sailings</h2>
-      </div>
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {filteredCruises.map((cruise) => {
-          const cardColor = LINE_COLORS[cruise.line] || MAIN_BRAND_COLOR;
-          const inCart = cart.find(c => c.id === cruise.id && c.type === 'cruise');
-          return (
-            <div key={cruise.id} className="bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100 flex flex-col">
-              <div className="relative h-56">
-                <img src={cruise.image} className="w-full h-full object-cover" alt={cruise.title} />
-                <button onClick={() => addToCart(cruise, 'cruise')} className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-md">
-                  <Heart size={20} className={inCart ? "fill-current" : "text-gray-300"} style={{ color: inCart ? MAIN_BRAND_COLOR : '' }} />
-                </button>
-              </div>
-              <div className="p-6 flex flex-col flex-grow">
-                <h3 className="font-brand text-xl text-gray-900 mb-2">{cruise.title}</h3>
-                <div className="mt-auto pt-4 flex justify-between items-center gap-3">
-                  <div className="flex-1">
-                    <p className="font-brand text-2xl" style={{ color: cardColor }}>${cruise.price}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => setSelectedCruise(cruise)}
-                      className="px-3 py-1.5 rounded-lg text-gray-600 font-body font-bold text-sm border border-gray-200 hover:bg-gray-50"
-                    >
-                      Details
-                    </button>
-                    <a 
-                      href={cruise.affiliateLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-4 py-1.5 rounded-lg text-white font-body font-bold text-sm shadow-md hover:shadow-lg hover:-translate-y-1 transition-all"
-                      style={{ backgroundColor: cardColor }}
-                    >
-                      View Deal
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )
-        })}
+    <div className="print-only p-8 font-body text-black">
+      <h1 className="font-brand text-3xl mb-6">Cruisy Travel Checklist</h1>
+      <div className="space-y-6">
+        {cart.map(item => (
+           <div key={item.id} className="border-b pb-2">
+             <div className="font-bold">{item.title || item.name}</div>
+             <div className="text-sm">{item.price ? `$${item.price}` : ''} - {item.line || 'Essential'}</div>
+           </div>
+        ))}
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 font-body text-gray-800 pb-20">
+    <div className="min-h-screen bg-ocean font-body text-slate-200 pb-10 selection:bg-teal-500 selection:text-white">
       <GlobalStyles />
       <PrintableItinerary />
       <CruiseDetailsModal />
-      <Header />
-      {step === 'wizard' ? <Wizard /> : <Results />}
-      
+
+      {/* HEADER */}
+      <header className="no-print sticky top-0 z-50 bg-[#0f172a]/95 backdrop-blur-md border-b border-slate-700 shadow-lg h-16 flex items-center justify-between px-4">
+        <div className="flex items-center gap-3">
+             <img src="https://cruisytravel.com/wp-content/uploads/2024/01/cropped-20240120_025955_0000.png" className="h-8 w-auto object-contain" alt="Logo" />
+             <div className="hidden sm:block font-brand text-lg text-white tracking-wide">Cruisy<span style={{ color: MAIN_BRAND_COLOR }}>Travel</span></div>
+        </div>
+        <div className="flex items-center gap-3">
+           <a href="https://cruisytravel.com" className="text-xs font-bold text-slate-400 hover:text-white flex items-center transition-colors"><LogOut size={14} className="mr-1" /> Back to cruisytravel.com</a>
+           <button onClick={() => setIsCartOpen(true)} className="relative p-2 bg-slate-800 rounded-full hover:bg-slate-700 border border-red-500 transition-colors">
+              <Heart size={18} className={cart.length > 0 ? "fill-teal-400 text-teal-400" : "text-slate-400"} />
+              {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full font-bold">{cart.length}</span>}
+           </button>
+        </div>
+      </header>
+
+      {/* DASHBOARD CONTROLS */}
+      <div className="no-print max-w-6xl mx-auto px-4 py-8">
+         <div className="bg-slate-800/50 rounded-2xl border border-slate-700 p-6 mb-8 shadow-xl">
+            <div className="flex flex-col md:flex-row gap-8 items-start md:items-center justify-between">
+                <div>
+                   <h2 className="font-brand text-2xl text-white mb-1 flex items-center gap-2">
+                     <Compass style={{ color: MAIN_BRAND_COLOR }} /> Cruise Matchmaker
+                   </h2>
+                   <p className="text-xs text-slate-400 uppercase tracking-widest font-bold">Configure Your Voyage</p>
+                </div>
+
+                <div className="flex-1 w-full md:w-auto flex flex-col gap-4">
+                   {/* DESTINATIONS */}
+                   <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+                      {['Caribbean', 'Mediterranean', 'Alaska', 'Europe', 'Transatlantic'].map(dest => {
+                          const isSelected = filters.destination === dest;
+                          const borderColors = {
+                              'Caribbean': 'border-cyan-500',
+                              'Mediterranean': 'border-blue-500',
+                              'Alaska': 'border-indigo-500',
+                              'Europe': 'border-rose-500',
+                              'Transatlantic': 'border-violet-500'
+                          };
+                          return (
+                            <button 
+                              key={dest} 
+                              onClick={() => setFilters({...filters, destination: dest === filters.destination ? '' : dest})}
+                              className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-bold border transition-all ${isSelected ? `bg-[${MAIN_BRAND_COLOR}] text-white shadow-lg` : 'bg-slate-900 text-slate-400 hover:border-slate-500'} ${borderColors[dest] || 'border-slate-700'}`}
+                              style={{ backgroundColor: isSelected ? MAIN_BRAND_COLOR : '' }}
+                            >
+                              {dest}
+                            </button>
+                          )
+                      })}
+                   </div>
+                   
+                   {/* VIBES */}
+                   <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+                      {Object.entries(LOGIC_ENGINE).map(([key, data]) => {
+                        const Icon = data.icon;
+                        const isSelected = filters.style === key;
+                        const borderColors = {
+                            family: 'border-sky-500',
+                            adults: 'border-rose-500',
+                            relaxing: 'border-emerald-500',
+                            luxury: 'border-violet-500',
+                            budget: 'border-amber-500'
+                        };
+                        return (
+                          <button 
+                            key={key} 
+                            onClick={() => setFilters({...filters, style: key === filters.style ? '' : key})}
+                            className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold border transition-all ${isSelected ? 'bg-orange-600 text-white shadow-lg' : 'bg-slate-900 text-slate-400 hover:border-slate-500'} ${borderColors[key] || 'border-slate-700'}`}
+                            style={{ borderColor: isSelected ? '' : (borderColors[key] || '#334155') }}
+                          >
+                            <Icon size={14} /> {data.label}
+                          </button>
+                        )
+                      })}
+                   </div>
+                </div>
+            </div>
+         </div>
+
+         {/* RESULTS GRID */}
+         {debugError && <div className="bg-red-900/50 text-red-200 p-4 rounded-lg mb-6 border border-red-800 text-sm text-center">{debugError}</div>}
+         
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredCruises.length === 0 ? (
+               <div className="col-span-full text-center py-20">
+                  <Palmtree size={48} className="mx-auto mb-4 text-slate-600" />
+                  <p className="font-brand text-xl text-slate-400">No matches found for this combination.</p>
+                  <button onClick={resetFilters} className="mt-4 text-teal-400 underline">Reset Filters</button>
+               </div>
+            ) : (
+              filteredCruises.map(cruise => {
+                 const cardColor = LINE_COLORS[cruise.line] || MAIN_BRAND_COLOR;
+                 return (
+                   <div key={cruise.id} className="bg-slate-800 rounded-2xl overflow-hidden border border-slate-700 shadow-xl group hover:border-slate-500 transition-all duration-300">
+                      <div className="relative h-48 bg-slate-900 overflow-hidden">
+                         <div className="absolute inset-0 bg-black/40 z-10" />
+                         <img src={cruise.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                         
+                         {/* PORTHOLE IMAGE EFFECT */}
+                         <div className="absolute -bottom-10 right-4 z-20 w-24 h-24 border-4 border-slate-800 rounded-full overflow-hidden shadow-xl porthole bg-slate-800">
+                            <img src={cruise.image} className="w-full h-full object-cover" />
+                         </div>
+
+                         <div className="absolute top-3 left-3 z-20">
+                            <span className="px-2 py-1 bg-slate-900/90 text-[10px] font-bold uppercase text-white rounded border border-slate-600 tracking-wider">{cruise.line}</span>
+                         </div>
+                      </div>
+                      
+                      <div className="p-5 pt-6">
+                         <div className="mb-4 pr-20"> {/* Padding for porthole */}
+                            <h3 className="font-brand text-lg text-white leading-tight mb-1">{cruise.title}</h3>
+                            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">{cruise.ship}</p>
+                         </div>
+                         
+                         <div className="flex items-end justify-between border-t border-slate-700 pt-4 mt-4">
+                            <div>
+                               <p className="text-[10px] text-slate-500 uppercase font-bold">Starting From</p>
+                               <p className="font-brand text-2xl text-white">${cruise.price}</p>
+                            </div>
+                            <div className="flex gap-2">
+                               <button onClick={() => setSelectedCruise(cruise)} className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors"><Info size={18}/></button>
+                               <button onClick={() => addToCart(cruise, 'cruise')} className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors"><Heart size={18}/></button>
+                               <a href={cruise.affiliateLink} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-lg text-white font-bold text-sm shadow-lg transition-transform hover:-translate-y-0.5" style={{ backgroundColor: cardColor }}>View</a>
+                            </div>
+                         </div>
+                      </div>
+                   </div>
+                 )
+              })
+            )}
+         </div>
+      </div>
+
+      {/* CHECKLIST DRAWER */}
       {isCartOpen && (
         <>
-          <div className="no-print fixed inset-0 bg-black/40 backdrop-blur-sm z-50" onClick={() => setIsCartOpen(false)} />
-          <div className="no-print fixed top-0 right-0 h-full w-full sm:w-96 bg-white z-[60] shadow-2xl flex flex-col">
-            <div className="p-6 border-b flex justify-between items-center bg-gray-50">
-              <h2 className="font-brand text-xl text-gray-800 flex items-center gap-2"><Heart className="w-5 h-5 fill-current" style={{ color: MAIN_BRAND_COLOR }} /> My Checklist</h2>
-              <button onClick={() => setIsCartOpen(false)}><X size={20} /></button>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-4 space-y-6">
-              {[
-                { type: 'cruise', label: 'Cruises', icon: Ship },
-                { type: 'product', label: 'Gear to Buy', icon: ShoppingBag },
-                { type: 'activity', label: 'Excursions', icon: Ticket }
-              ].map(section => {
-                const items = cart.filter(c => c.type === section.type);
-                if (items.length === 0) return null;
-                return (
-                  <div key={section.type}>
-                     <h3 className="font-brand text-sm text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2"><section.icon size={14} /> {section.label}</h3>
-                     <div className="space-y-3">
-                       {items.map(item => {
-                         const itemLink = item.affiliateLink || item.link;
-                         return (
-                           <div key={item.id} className="flex gap-3 items-start group">
-                              <label className="relative flex items-center pt-1 cursor-pointer">
-                                <input type="checkbox" className="custom-checkbox sr-only" checked={item.checked} onChange={() => toggleItemCheck(item.id)} />
-                                <div className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-colors ${item.checked ? 'bg-teal-500 border-teal-500 text-white' : 'border-gray-300'}`} style={{ backgroundColor: item.checked ? MAIN_BRAND_COLOR : '', borderColor: item.checked ? MAIN_BRAND_COLOR : '' }}>
-                                  {item.checked && <Check size={12} strokeWidth={4} />}
+          <div className="no-print fixed inset-0 bg-black/60 backdrop-blur-sm z-[90]" onClick={() => setIsCartOpen(false)} />
+          <div className="no-print fixed top-0 right-0 h-full w-full sm:w-96 bg-slate-900 z-[100] shadow-2xl border-l border-slate-700 flex flex-col">
+             <div className="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/95">
+               <h2 className="font-brand text-xl text-white flex items-center gap-2"><Heart className="text-teal-400 fill-teal-400" size={20} /> Saved Items</h2>
+               <button onClick={() => setIsCartOpen(false)}><X size={20} className="text-slate-400 hover:text-white" /></button>
+             </div>
+             
+             <div className="flex-1 overflow-y-auto p-5 space-y-6">
+                {['cruise', 'product', 'activity'].map(type => {
+                   const items = cart.filter(c => c.type === type);
+                   if (!items.length) return null;
+                   const label = { cruise: 'Cruises', product: 'Gear', activity: 'Excursions' }[type];
+                   return (
+                     <div key={type}>
+                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">{label}</h3>
+                        <div className="space-y-3">
+                           {items.map(item => (
+                             <div key={item.id} className="bg-slate-800 p-3 rounded-xl border border-slate-700 flex gap-3 group relative">
+                                <div className="w-12 h-12 bg-slate-900 rounded-lg overflow-hidden flex-shrink-0">
+                                   <img src={item.image} className="w-full h-full object-cover" />
                                 </div>
-                              </label>
-                              {/* UPDATED: Thumbnail Image */}
-                              <img src={item.image} className="w-12 h-12 rounded-md object-cover flex-shrink-0 bg-gray-100" />
-                              <div className="flex-1">
-                                <div className={`font-bold text-sm leading-tight transition-all ${item.checked ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
-                                  {item.title || item.name}
+                                <div className="flex-1 min-w-0">
+                                   <div className={`text-sm font-bold truncate ${item.checked ? 'text-slate-500 line-through' : 'text-slate-200'}`}>{item.title || item.name}</div>
+                                   <div className="text-xs text-slate-500">${item.price}</div>
                                 </div>
-                                <div className="text-xs text-gray-400 mb-1">{item.line || item.parentContext}</div>
-                                <div className="flex items-center gap-3">
-                                  <a href={itemLink} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-teal-600 hover:underline">Book/Buy</a>
-                                  
-                                  {item.type === 'cruise' && (
-                                    <button 
-                                      onClick={() => { setIsCartOpen(false); setSelectedCruise(item); }}
-                                      className="text-xs text-gray-400 hover:text-teal-600 flex items-center gap-1"
-                                      title="View Details"
-                                    >
-                                      <Info size={12} /> Details
-                                    </button>
-                                  )}
-
-                                  <button onClick={() => handleRemoveFromCart(item.id)} className="text-xs text-gray-400 hover:text-gray-600">Remove</button>
+                                <div className="flex flex-col justify-between items-end">
+                                   <button onClick={() => handleRemoveFromCart(item.id)} className="text-slate-600 hover:text-red-400"><X size={14} /></button>
+                                   <input type="checkbox" checked={item.checked} onChange={() => toggleItemCheck(item.id)} className="accent-teal-500 w-4 h-4" />
                                 </div>
-                              </div>
-                           </div>
-                         )
-                       })}
-                     </div>
-                  </div>
-                )
-              })}
-              {cart.length === 0 && <div className="text-center py-10 text-gray-400">Your list is empty.</div>}
-
-              {/* UPDATED: Suggested Items Section */}
-              <div className="border-t border-gray-100 pt-6 mt-6">
-                <h3 className="font-brand text-sm text-gray-400 uppercase tracking-widest mb-3">Don't Forget Essentials</h3>
-                <div className="grid grid-cols-1 gap-2">
-                  {SUGGESTED_ESSENTIALS.map(item => {
-                    // Don't show if already added
-                    if (cart.find(c => c.name === item.name)) return null;
-                    return (
-                      <div key={item.id} className="flex items-center gap-3 bg-gray-50 p-2 rounded-lg border border-gray-100">
-                        <img src={item.image} className="w-10 h-10 rounded object-cover" />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-gray-700 truncate">{item.name}</div>
-                          <div className="text-xs text-gray-500">${item.price}</div>
+                             </div>
+                           ))}
                         </div>
-                        <button onClick={() => addToCart(item, 'product', 'Essentials')} className="text-teal-600 hover:bg-teal-100 p-1.5 rounded-full transition-colors"><PlusCircle size={20} /></button>
-                      </div>
-                    )
-                  })}
+                     </div>
+                   )
+                })}
+
+                <div className="border-t border-slate-800 pt-6">
+                   <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Essentials</h3>
+                   <div className="grid grid-cols-1 gap-2">
+                      {SUGGESTED_ESSENTIALS.map(item => {
+                         if (cart.find(c => c.name === item.name)) return null;
+                         return (
+                            <div key={item.id} className="flex items-center gap-3 bg-slate-800 p-2 rounded-lg border border-slate-700 hover:border-slate-600 transition-colors">
+                               <img src={item.image} className="w-10 h-10 rounded-md object-cover" />
+                               <div className="flex-1 min-w-0">
+                                  <div className="text-xs font-bold text-slate-300 truncate">{item.name}</div>
+                                  <div className="text-[10px] text-slate-500">${item.price}</div>
+                               </div>
+                               <button onClick={() => addToCart(item, 'product')} className="text-teal-400 hover:text-white"><PlusCircle size={18} /></button>
+                            </div>
+                         )
+                      })}
+                   </div>
                 </div>
-              </div>
-            </div>
-            
-            {cart.length > 0 && (
-              <div className="p-4 border-t bg-gray-50 space-y-3">
-                <button onClick={handleEmailShare} className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-gray-300 rounded-xl font-brand text-gray-700 hover:bg-gray-50">
-                  <Mail size={18} /> Email Checklist
-                </button>
-                <button onClick={() => window.print()} className="w-full flex items-center justify-center gap-2 py-3 text-white rounded-xl font-brand shadow-md hover:opacity-90" style={{ backgroundColor: MAIN_BRAND_COLOR }}>
-                  <Printer size={18} /> Print Checklist
-                </button>
-              </div>
-            )}
+             </div>
+
+             <div className="p-5 border-t border-slate-800 bg-slate-900 sticky bottom-0 space-y-2">
+                <button onClick={handleEmailShare} className="w-full py-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 font-bold text-sm hover:bg-slate-700 flex items-center justify-center gap-2"><Mail size={16} /> Email List</button>
+                <button onClick={() => window.print()} className="w-full py-3 rounded-xl bg-teal-600 text-white font-bold text-sm hover:bg-teal-500 flex items-center justify-center gap-2"><Printer size={16} /> Print</button>
+             </div>
           </div>
         </>
       )}
