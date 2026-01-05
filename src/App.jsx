@@ -526,7 +526,7 @@ const App = () => {
                                   <div className="flex flex-col justify-between items-end">
                                      <button onClick={() => handleRemoveFromCart(item.id)} className="text-slate-600 hover:text-red-400"><X size={14} /></button>
                                      <div className="flex gap-2">
-                                        <a href={itemLink} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold bg-teal-600 text-white px-2 py-1 rounded hover:bg-teal-500">Book</a>
+                                        <a href={itemLink} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold bg-teal-600 text-white px-2 py-1 rounded hover:bg-teal-500">{type === 'product' ? 'Buy' : 'Book'}</a>
                                         <input type="checkbox" checked={item.checked} onChange={() => toggleItemCheck(item.id)} className="accent-teal-500 w-4 h-4 mt-0.5" />
                                      </div>
                                   </div>
