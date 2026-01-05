@@ -25,7 +25,8 @@ import {
   LogOut,
   Compass,
   Filter,
-  Palmtree
+  Palmtree,
+  ExternalLink
 } from 'lucide-react';
 
 // --- FONTS & STYLES ---
@@ -215,8 +216,15 @@ const App = () => {
 
   const addToCart = (item, type) => {
     const itemId = item.id || `${type}-${item.name}-${Date.now()}`;
-    if (!cart.find(c => (c.title === item.title || c.name === item.name) && c.type === type)) {
-      setCart([...cart, { ...item, id: itemId, type, checked: false }]);
+    // Allow multiple items of type 'cruise' to be added for comparison
+    // For other types, prevent duplicates based on title/name
+    const isDuplicate = cart.find(c => (c.title === item.title || c.name === item.name) && c.type === type);
+    
+    if (!isDuplicate || type === 'cruise') {
+       // Check for exact duplicate ID to prevent accidental double-clicks
+       if(!cart.find(c => c.id === item.id)) {
+          setCart([...cart, { ...item, id: itemId, type, checked: false }]);
+       }
     }
     setIsCartOpen(true);
   };
@@ -271,32 +279,57 @@ const App = () => {
               </div>
             </div>
 
-            {/* Dynamic Affiliates in Modal */}
-            {(selectedCruise.excursions?.length > 0 || selectedCruise.amazonProducts?.length > 0) && (
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <h4 className="font-brand text-sm text-slate-800 mb-3">Add to your trip</h4>
-                <div className="space-y-3">
-                  {selectedCruise.excursions?.map((exc, i) => (
-                    <div key={i} className="flex justify-between items-center text-sm">
-                      <span className="truncate pr-2 font-medium">{exc.name} <span className="text-slate-400">(${exc.price})</span></span>
-                      <button onClick={() => addToCart(exc, 'activity')} className="text-orange-500 hover:text-orange-600 font-bold text-xs border border-orange-200 px-2 py-1 rounded bg-white">Add Activity</button>
-                    </div>
-                  ))}
-                  {selectedCruise.amazonProducts?.map((prod, i) => (
-                    <div key={i} className="flex justify-between items-center text-sm">
-                      <span className="truncate pr-2 font-medium">{prod.name} <span className="text-slate-400">(${prod.price})</span></span>
-                      <button onClick={() => addToCart(prod, 'product')} className="text-teal-600 hover:text-teal-700 font-bold text-xs border border-teal-200 px-2 py-1 rounded bg-white">Add Gear</button>
+            {/* ADD TO TRIP SECTION */}
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+              <h4 className="font-brand text-sm text-slate-800 mb-4">Add to your trip</h4>
+              <div className="space-y-4">
+                
+                {/* 1. Activities Button */}
+                <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 shadow-sm">
+                   <div className="flex items-center gap-3">
+                     <div className="bg-orange-100 p-2 rounded-lg text-orange-600"><Ticket size={20} /></div>
+                     <div>
+                       <div className="font-bold text-slate-700 text-sm">Shore Excursions & Activities</div>
+                       <div className="text-xs text-slate-500">Book tours for your trip</div>
+                     </div>
+                   </div>
+                   <a href="https://cruisytravel.com/contact/" target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-orange-500 text-white rounded-lg text-xs font-bold hover:bg-orange-600 transition-colors flex items-center gap-1">
+                     Book Activities <ExternalLink size={12} />
+                   </a>
+                </div>
+
+                {/* 2. Amazon Essentials */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {SUGGESTED_ESSENTIALS.map((prod, i) => (
+                    <div key={i} className="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                       <div className="flex items-center gap-3 overflow-hidden">
+                          <img src={prod.image} className="w-10 h-10 rounded-md object-cover flex-shrink-0" />
+                          <div className="truncate">
+                             <div className="font-bold text-xs text-slate-700 truncate">{prod.name}</div>
+                             <div className="text-[10px] text-teal-600 font-bold">${prod.price}</div>
+                          </div>
+                       </div>
+                       <button onClick={() => addToCart(prod, 'product')} className="text-teal-600 hover:text-teal-700 font-bold text-xs border border-teal-200 p-2 rounded bg-slate-50 hover:bg-white"><PlusCircle size={16} /></button>
                     </div>
                   ))}
                 </div>
+
               </div>
-            )}
+            </div>
 
             <div className="flex justify-between items-center pt-4 border-t border-slate-100">
                <div className="text-2xl font-brand text-slate-800">${selectedCruise.price}</div>
                <div className="flex gap-2">
                  <button onClick={() => addToCart(selectedCruise, 'cruise')} className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-50">Save</button>
-                 <a href={selectedCruise.affiliateLink} target="_blank" rel="noopener noreferrer" className="px-6 py-2 bg-teal-600 text-white rounded-lg text-sm font-bold hover:bg-teal-700 shadow-md">View Deal</a>
+                 <a 
+                   href={selectedCruise.affiliateLink} 
+                   target="_blank" 
+                   rel="noopener noreferrer" 
+                   className="px-6 py-2 rounded-lg text-white font-bold text-sm hover:opacity-90 shadow-md transition-all" 
+                   style={{ backgroundColor: color }} 
+                 >
+                   Availability
+                 </a>
                </div>
             </div>
           </div>
@@ -344,11 +377,11 @@ const App = () => {
       <div className="no-print max-w-6xl mx-auto px-4 py-8">
          <div className="bg-slate-800/50 rounded-2xl border border-slate-700 p-6 mb-8 shadow-xl">
             <div className="flex flex-col md:flex-row gap-8 items-start md:items-center justify-between">
-                <div>
-                   <h2 className="font-brand text-2xl text-white mb-1 flex items-center gap-2">
+                <div className="cursor-pointer group" onClick={resetFilters}>
+                   <h2 className="font-brand text-2xl text-white mb-1 flex items-center gap-2 group-hover:text-teal-400 transition-colors">
                      <Compass style={{ color: MAIN_BRAND_COLOR }} /> Cruise Matchmaker
                    </h2>
-                   <p className="text-xs text-slate-400 uppercase tracking-widest font-bold">Configure Your Voyage</p>
+                   <p className="text-xs text-slate-400 uppercase tracking-widest font-bold group-hover:text-white transition-colors">Configure Your Voyage</p>
                 </div>
 
                 <div className="flex-1 w-full md:w-auto flex flex-col gap-4">
@@ -445,9 +478,11 @@ const App = () => {
                                <p className="font-brand text-2xl text-white">${cruise.price}</p>
                             </div>
                             <div className="flex gap-2">
-                               <button onClick={() => setSelectedCruise(cruise)} className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors"><Info size={18}/></button>
+                               <button onClick={() => setSelectedCruise(cruise)} className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors flex items-center gap-1 text-xs font-bold px-3">
+                                 <Info size={14}/> Details
+                               </button>
                                <button onClick={() => addToCart(cruise, 'cruise')} className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors"><Heart size={18}/></button>
-                               <a href={cruise.affiliateLink} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-lg text-white font-bold text-sm shadow-lg transition-transform hover:-translate-y-0.5" style={{ backgroundColor: cardColor }}>View</a>
+                               <a href={cruise.affiliateLink} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-lg text-white font-bold text-sm shadow-lg transition-transform hover:-translate-y-0.5" style={{ backgroundColor: cardColor }}>Availability</a>
                             </div>
                          </div>
                       </div>
@@ -477,21 +512,27 @@ const App = () => {
                      <div key={type}>
                         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">{label}</h3>
                         <div className="space-y-3">
-                           {items.map(item => (
-                             <div key={item.id} className="bg-slate-800 p-3 rounded-xl border border-slate-700 flex gap-3 group relative">
-                                <div className="w-12 h-12 bg-slate-900 rounded-lg overflow-hidden flex-shrink-0">
-                                   <img src={item.image} className="w-full h-full object-cover" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                   <div className={`text-sm font-bold truncate ${item.checked ? 'text-slate-500 line-through' : 'text-slate-200'}`}>{item.title || item.name}</div>
-                                   <div className="text-xs text-slate-500">${item.price}</div>
-                                </div>
-                                <div className="flex flex-col justify-between items-end">
-                                   <button onClick={() => handleRemoveFromCart(item.id)} className="text-slate-600 hover:text-red-400"><X size={14} /></button>
-                                   <input type="checkbox" checked={item.checked} onChange={() => toggleItemCheck(item.id)} className="accent-teal-500 w-4 h-4" />
-                                </div>
-                             </div>
-                           ))}
+                           {items.map(item => {
+                             const itemLink = item.affiliateLink || item.link;
+                             return (
+                               <div key={item.id} className="bg-slate-800 p-3 rounded-xl border border-slate-700 flex gap-3 group relative">
+                                  <div className="w-12 h-12 bg-slate-900 rounded-lg overflow-hidden flex-shrink-0">
+                                     <img src={item.image} className="w-full h-full object-cover" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                     <div className={`text-sm font-bold truncate ${item.checked ? 'text-slate-500 line-through' : 'text-slate-200'}`}>{item.title || item.name}</div>
+                                     <div className="text-xs text-slate-500">${item.price}</div>
+                                  </div>
+                                  <div className="flex flex-col justify-between items-end">
+                                     <button onClick={() => handleRemoveFromCart(item.id)} className="text-slate-600 hover:text-red-400"><X size={14} /></button>
+                                     <div className="flex gap-2">
+                                        <a href={itemLink} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold bg-teal-600 text-white px-2 py-1 rounded hover:bg-teal-500">Book</a>
+                                        <input type="checkbox" checked={item.checked} onChange={() => toggleItemCheck(item.id)} className="accent-teal-500 w-4 h-4 mt-0.5" />
+                                     </div>
+                                  </div>
+                               </div>
+                             )
+                           })}
                         </div>
                      </div>
                    )
